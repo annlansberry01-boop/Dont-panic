@@ -1,0 +1,1601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1D9E75" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Don't Panic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:        #1D9E75;
+      --green-dark:   #157A5B;
+      --green-light:  #E8F8F2;
+      --green-subtle: #F0FAF6;
+      --text-primary:   #1A1A1A;
+      --text-secondary: #4A4A4A;
+      --text-tertiary:  #888;
+      --bg:      #F7F8F6;
+      --surface: #FFFFFF;
+      --border:  #E5E5E3;
+      --radius:    12px;
+      --radius-sm: 8px;
+      --shadow:    0 2px 12px rgba(0,0,0,0.08);
+      --nav-height: 68px;
+    }
+    html, body, #root { height: 100%; width: 100%; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    /* ── App shell ── */
+    .app {
+      display: flex; flex-direction: column;
+      height: 100dvh; max-width: 480px;
+      margin: 0 auto; background: var(--surface);
+      position: relative;
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .main-content {
+      flex: 1; overflow-y: auto;
+      padding-bottom: calc(var(--nav-height) + 8px);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .main-content::-webkit-scrollbar { display: none; }
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px 14px;
+      flex-shrink: 0;
+    }
+    .header-top { display: flex; align-items: center; margin-bottom: 10px; }
+    .header-brand { display: flex; align-items: center; gap: 6px; }
+    .header-logo { font-size: 18px; line-height: 1; }
+    .header-name { font-size: 17px; font-weight: 700; color: var(--green); letter-spacing: -0.3px; }
+    .header-user { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .header-display-name { display: block; font-size: 15px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+    .header-meta { display: block; font-size: 12px; color: var(--text-tertiary); margin-top: 1px; }
+    .header-pills { display: flex; gap: 6px; flex-shrink: 0; margin-top: 2px; }
+    .pill { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+    .pill-done { background: var(--green-light); color: var(--green-dark); }
+    .pill-remaining { background: #F0F0F0; color: var(--text-secondary); }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0;
+      left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      height: var(--nav-height);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex; z-index: 20;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; background: none; border: none;
+      cursor: pointer; padding: 8px 4px;
+      color: var(--text-tertiary);
+      transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-tab--active { color: var(--green); }
+    .nav-icon { font-size: 20px; line-height: 1; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.2px; }
+
+    /* ── Screens ── */
+    .screen { padding: 16px; }
+    .section-title {
+      font-size: 13px; font-weight: 700; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      margin-bottom: 10px; margin-top: 4px;
+    }
+    .plan-section { margin-bottom: 24px; }
+
+    /* ── Buckets ── */
+    .bucket { margin-bottom: 20px; }
+    .bucket-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px; padding: 10px 12px;
+      background: var(--bg); border-radius: var(--radius-sm);
+    }
+    .bucket-header--done { background: var(--green-light); }
+    .bucket-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .bucket-header--done .bucket-title { color: var(--green-dark); }
+    .bucket-count {
+      font-size: 12px; font-weight: 700;
+      background: var(--surface); color: var(--text-secondary);
+      padding: 2px 7px; border-radius: 99px;
+      border: 1px solid var(--border);
+    }
+    .bucket-header--done .bucket-count {
+      background: var(--green-light); color: var(--green-dark);
+      border-color: var(--green);
+    }
+
+    /* ── Action cards ── */
+    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .card-grid--library { margin-top: 4px; }
+    .action-card {
+      border-radius: var(--radius-sm); border: 1.5px solid;
+      padding: 10px 10px 12px; cursor: pointer;
+      display: flex; flex-direction: column;
+      gap: 4px; min-height: 72px;
+      position: relative;
+      transition: opacity 0.1s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .action-card:active { opacity: 0.85; transform: scale(0.97); }
+    .action-card--library { min-height: 80px; }
+    .action-card--done { background: #F5F5F4 !important; border-color: #DDD !important; }
+    .action-card--in-plan { box-shadow: 0 0 0 2px var(--green); }
+    .card-theme-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+    .card-money-tag { font-weight: 800; opacity: 1; letter-spacing: 0.2px; }
+    .card-ongoing-badge {
+      display: inline-block; margin-top: 4px;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 4px;
+      border: 1px dashed; opacity: 0.75;
+      align-self: flex-start;
+    }
+    .card-title { font-size: 13px; font-weight: 500; line-height: 1.35; }
+    .card-title--done { text-decoration: line-through; color: var(--text-tertiary) !important; }
+    .card-in-plan-badge {
+      position: absolute; top: 6px; right: 6px;
+      font-size: 9px; font-weight: 700;
+      padding: 2px 5px; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+
+    /* ── Action type hub ── */
+    .hub-intro { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5; }
+    .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .hub-card {
+      display: flex; flex-direction: column; align-items: flex-start;
+      padding: 16px 14px 18px; border-radius: var(--radius);
+      border: 2px solid var(--border); background: var(--surface);
+      cursor: pointer; text-align: left; gap: 3px;
+      font-family: inherit; width: 100%;
+      transition: border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hub-card:active { transform: scale(0.96); }
+    .hub-emoji { font-size: 26px; line-height: 1; margin-bottom: 6px; }
+    .hub-label { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .hub-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.35; }
+    .hub-count { font-size: 11px; font-weight: 700; margin-top: 8px; padding: 2px 8px; border-radius: 99px; }
+    .hub-card--personal .hub-count  { background: var(--green-light);  color: var(--green-dark); }
+    .hub-card--community .hub-count { background: #FFF3E0; color: #8B4513; }
+    .hub-card--political .hub-count { background: #EEF2FF; color: #3730A3; }
+    .hub-card--all       .hub-count { background: #F0F0F0; color: var(--text-secondary); }
+    .hub-card--personal  { border-color: #9FE1CB; }
+    .hub-card--community { border-color: #FFCC80; }
+    .hub-card--political { border-color: #A5B4FC; }
+    .hub-card--all       { border-color: var(--border); }
+
+    /* ── Back button & type header ── */
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: none; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--green);
+      padding: 0 0 16px; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .type-header {
+      font-size: 13px; font-weight: 700; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
+    }
+
+    /* ── Filters ── */
+    .filter-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .filter-row--scroll {
+      flex-wrap: nowrap; overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding-bottom: 2px;
+    }
+    .filter-row--scroll::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      white-space: nowrap; padding: 6px 12px;
+      border-radius: 99px; border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--text-secondary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .filter-chip--active { background: var(--green); border-color: var(--green); color: #fff; }
+
+    /* ── Empty states ── */
+    .empty-state { color: var(--text-tertiary); font-size: 14px; text-align: center; padding: 32px 16px; line-height: 1.5; }
+    .empty-state-center { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 24px; gap: 8px; }
+    .empty-icon { font-size: 40px; margin-bottom: 4px; }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .empty-body { font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 260px; }
+
+    /* ── Reminders ── */
+    .reminders-section { margin-bottom: 28px; }
+    .reminder-card {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+    }
+    .reminder-card--sent { opacity: 0.55; }
+    .reminder-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .reminder-tag {
+      font-size: 11px; font-weight: 700; color: var(--green-dark);
+      background: var(--green-light); padding: 2px 7px;
+      border-radius: 99px; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .reminder-date { font-size: 11px; color: var(--text-tertiary); }
+    .reminder-copy { font-size: 13px; line-height: 1.55; color: var(--text-secondary); margin-bottom: 10px; }
+    .reminder-link {
+      font-size: 13px; font-weight: 600; color: var(--green);
+      background: none; border: none; cursor: pointer; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Bottom sheet ── */
+    .sheet-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 30;
+      animation: fadeIn 0.18s ease;
+    }
+    .sheet {
+      position: fixed; bottom: 0;
+      left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 12px 20px 32px;
+      z-index: 31;
+      animation: slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+      max-height: 92dvh; overflow-y: auto;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0));
+    }
+    @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes slideUp { from { transform: translateX(-50%) translateY(100%); } to { transform: translateX(-50%) translateY(0); } }
+    .sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+    .sheet-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      border: 1.5px solid; margin-bottom: 14px; max-width: 100%;
+    }
+    .sheet-chip-theme { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+    .sheet-chip-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sheet-heading { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; line-height: 1.4; }
+    .sheet-year-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .sheet-year-btn {
+      padding: 12px 8px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--text-primary);
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: all 0.12s; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet-year-btn:active,
+    .sheet-year-btn.active {
+      border-color: var(--green); background: var(--green-light);
+      color: var(--green-dark); font-weight: 600;
+    }
+    .sheet-year-btn--ongoing {
+      grid-column: 1 / -1;
+      border-style: dashed;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    .sheet-year-btn--ongoing.active {
+      border-style: solid;
+    }
+    .sheet-done-btn { margin-bottom: 12px; }
+    .sheet-remove-btn, .sheet-cancel-btn {
+      display: block; width: 100%; text-align: center;
+      padding: 10px; background: none; border: none;
+      font-size: 14px; font-weight: 500; color: var(--text-tertiary);
+      cursor: pointer; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet-remove-btn { color: #C0392B; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: var(--green); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      padding: 14px 20px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary:active { background: var(--green-dark); }
+    .btn-full { display: block; width: 100%; text-align: center; }
+
+    /* ── Onboarding ── */
+    .onboarding {
+      min-height: 100dvh; display: flex;
+      align-items: flex-start; justify-content: center;
+      background: var(--green-subtle); padding: 0 20px 40px; overflow-y: auto;
+    }
+    .onboarding-inner { width: 100%; max-width: 440px; padding-top: 52px; }
+    .onboarding-logo { font-size: 48px; margin-bottom: 8px; }
+    .onboarding-title { font-size: 32px; font-weight: 800; color: var(--green-dark); letter-spacing: -0.8px; margin-bottom: 12px; }
+    .onboarding-sub { font-size: 15px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 32px; max-width: 340px; }
+    .onboarding-form {
+      background: var(--surface); border-radius: var(--radius);
+      padding: 24px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+    .field input, .field select {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 15px; font-family: inherit; background: var(--surface);
+      color: var(--text-primary); outline: none;
+      transition: border-color 0.15s; appearance: none; -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus { border-color: var(--green); }
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾'; position: absolute;
+      right: 14px; top: 50%; transform: translateY(-50%);
+      pointer-events: none; color: var(--text-tertiary); font-size: 14px;
+    }
+    .form-error { font-size: 13px; color: #C0392B; font-weight: 500; }
+    .onboarding-note { font-size: 12px; color: var(--text-tertiary); text-align: center; line-height: 1.5; }
+
+    /* ── Your Plan screen ── */
+    .your-plan-screen { padding: 0 16px 40px; }
+    .your-plan-toolbar {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; padding: 18px 0 16px;
+      border-bottom: 1px solid var(--border); margin-bottom: 20px;
+    }
+    .your-plan-title  { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.4px; }
+    .your-plan-subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 3px; }
+    .toolbar-btns { display: flex; gap: 8px; flex-shrink: 0; padding-top: 2px; }
+    .toolbar-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 14px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--text-secondary);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+      transition: all 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .toolbar-btn:active { background: var(--bg); }
+    .toolbar-btn--primary { background: var(--green); color: #fff; border-color: var(--green); }
+    .toolbar-btn--primary:active { background: var(--green-dark); }
+
+    .your-plan-wins {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--green-dark);
+      background: var(--green-light); padding: 10px 14px;
+      border-radius: var(--radius-sm); margin-bottom: 20px;
+    }
+
+    .your-plan-bucket { margin-bottom: 28px; }
+    .your-plan-bucket-label {
+      font-size: 11px; font-weight: 800; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding-bottom: 8px; margin-bottom: 8px;
+      border-bottom: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .your-plan-bucket-label span {
+      font-size: 11px; font-weight: 600;
+      color: var(--text-tertiary); text-transform: none; letter-spacing: 0;
+    }
+    .your-plan-items { display: flex; flex-direction: column; gap: 6px; }
+    .your-plan-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: var(--radius-sm);
+      border-left: 4px solid;
+    }
+    .your-plan-item-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .your-plan-item-text { flex: 1; }
+    .your-plan-item-cat {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; opacity: 0.65; display: block; margin-bottom: 1px;
+    }
+    .your-plan-item-title { font-size: 14px; font-weight: 500; line-height: 1.35; display: block; }
+    .your-plan-item-ongoing {
+      font-size: 10px; font-weight: 700; opacity: 0.6;
+      flex-shrink: 0; letter-spacing: 0.3px;
+    }
+
+    .your-plan-footer {
+      font-size: 12px; color: var(--text-tertiary);
+      text-align: center; padding-top: 16px; margin-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Sprint ── */
+    .sprint-section {
+      margin-bottom: 20px;
+      border: 2px solid #F59E0B;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .sprint-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; background: #FEF3C7;
+      border-bottom: 1px solid #F59E0B;
+    }
+    .sprint-header-info { display: flex; align-items: center; gap: 8px; }
+    .sprint-header-icon { font-size: 18px; }
+    .sprint-title { font-size: 13px; font-weight: 700; color: #92400E; }
+    .sprint-days  { font-size: 11px; color: #B45309; margin-top: 1px; }
+    .sprint-end-btn {
+      font-size: 12px; font-weight: 600; color: #92400E;
+      background: none; border: 1.5px solid #D97706;
+      border-radius: var(--radius-sm); padding: 4px 10px;
+      cursor: pointer; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sprint-cards { padding: 10px 10px 12px; }
+    .sprint-empty {
+      padding: 12px 10px; font-size: 13px; color: var(--text-tertiary); line-height: 1.5;
+    }
+    .sprint-cta {
+      width: 100%; margin-bottom: 20px;
+      padding: 16px; background: #FFFBEB;
+      border: 1.5px dashed #F59E0B; border-radius: var(--radius);
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; text-align: left; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s;
+    }
+    .sprint-cta:active { background: #FEF3C7; }
+    .sprint-cta-icon { font-size: 24px; flex-shrink: 0; }
+    .sprint-cta-body { flex: 1; }
+    .sprint-cta-title { font-size: 14px; font-weight: 700; color: #92400E; margin-bottom: 2px; }
+    .sprint-cta-desc { font-size: 12px; color: #B45309; line-height: 1.4; }
+    .sprint-cta-arrow { font-size: 20px; color: #D97706; flex-shrink: 0; }
+    .sheet-year-btn--sprint {
+      grid-column: 1 / -1;
+      background: #FFFBEB; border-color: #F59E0B;
+      color: #92400E; font-weight: 600;
+    }
+    .sheet-year-btn--sprint.active {
+      background: #FEF3C7; border-color: #D97706; border-style: solid;
+    }
+
+    /* ── Print styles ── */
+    .print-only { display: none; }
+
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: white !important; font-family: 'Inter', sans-serif; }
+      .app { box-shadow: none !important; max-width: none !important; height: auto !important; }
+      .main-content { overflow: visible !important; padding-bottom: 0 !important; }
+      .bottom-nav, .app-header, .toolbar-btns, .sheet-backdrop, .sheet { display: none !important; }
+
+      .print-only { display: block !important; }
+      .print-header {
+        padding-bottom: 16px; margin-bottom: 20px;
+        border-bottom: 2px solid #1D9E75;
+        display: flex; align-items: flex-start; justify-content: space-between;
+      }
+      .print-logo { font-size: 20px; font-weight: 800; color: #1D9E75; margin-bottom: 4px; }
+      .print-user { font-size: 13px; color: #4A4A4A; }
+      .print-meta { font-size: 11px; color: #888; margin-top: 2px; }
+      .print-date { font-size: 11px; color: #888; text-align: right; }
+
+      .your-plan-toolbar { border-bottom: none; padding: 0; margin-bottom: 0; }
+      .your-plan-title { font-size: 18px; }
+      .your-plan-wins { -webkit-print-color-adjust: exact; }
+      .your-plan-item { break-inside: avoid; -webkit-print-color-adjust: exact; }
+      .your-plan-bucket-label { break-after: avoid; }
+      .your-plan-bucket { break-inside: avoid; }
+      .your-plan-footer { margin-top: 24px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useCallback, useEffect } = React;
+
+    // ── Data ─────────────────────────────────────────────────────────────────
+
+    const THEMES = {
+      transport: { label: 'Transport', bg: '#E6F1FB', text: '#185FA5', border: '#B5D4F4' },
+      energy:    { label: 'Energy',    bg: '#FAEEDA', text: '#854F0B', border: '#FAC775' },
+      stuff:     { label: 'Stuff',     bg: '#FAECE7', text: '#993C1D', border: '#F5C4B3' },
+      nature:    { label: 'Nature',    bg: '#E1F5EE', text: '#0F6E56', border: '#9FE1CB' },
+      food:      { label: 'Food',      bg: '#EAF3DE', text: '#3B6D11', border: '#C0DD97' },
+      money:     { label: 'Money',     bg: '#EEEDFE', text: '#534AB7', border: '#CECBF6' },
+    };
+
+    const ACTIONS = [
+      // ── Transport ──────────────────────────────────────────────────────────
+      { id: 'try-walking',         title: 'Try walking',                          theme: 'transport', actionType: 'personal',   cost: 1, impact: 2 },
+      { id: 'walk-to-work',        title: 'Walk to work',                         theme: 'transport', actionType: 'personal',   cost: 1, impact: 3 },
+      { id: 'try-riding-a-bike',   title: 'Try riding a bike',                    theme: 'transport', actionType: 'personal',   cost: 1, impact: 2 },
+      { id: 'ride-to-work',        title: 'Ride to work',                         theme: 'transport', actionType: 'personal',   cost: 1, impact: 3 },
+      { id: 'buy-a-bike',          title: 'Buy a bike',                           theme: 'transport', actionType: 'personal',   cost: 2, impact: 3 },
+      { id: 'get-an-e-bike',       title: 'Get an e-bike',                        theme: 'transport', actionType: 'personal',   cost: 3, impact: 4, moneyAngle: 'invest' },
+      { id: 'try-catching-a-bus',  title: 'Try catching a bus',                   theme: 'transport', actionType: 'personal',   cost: 1, impact: 2 },
+      { id: 'catch-a-bus-to-work', title: 'Catch a bus to work',                  theme: 'transport', actionType: 'personal',   cost: 1, impact: 3 },
+      { id: 'catch-a-train',       title: 'Catch a train',                        theme: 'transport', actionType: 'personal',   cost: 2, impact: 3 },
+      { id: 'join-community-bike', title: 'Join a community bike ride',           theme: 'transport', actionType: 'community',  cost: 1, impact: 2 },
+      { id: 'drive-less',          title: 'Drive less',                           theme: 'transport', actionType: 'personal',   cost: 1, impact: 3, moneyAngle: 'save' },
+      { id: 'drop-kids-500m',      title: 'Drop kids 500m from school',           theme: 'transport', actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'ditch-one-car',       title: 'Ditch one car',                        theme: 'transport', actionType: 'personal',   cost: 1, impact: 4, moneyAngle: 'save' },
+      { id: 'ditch-two-cars',      title: 'Ditch two cars',                       theme: 'transport', actionType: 'personal',   cost: 1, impact: 5, moneyAngle: 'save' },
+      { id: 'buy-an-ev',           title: 'Buy an EV',                            theme: 'transport', actionType: 'personal',   cost: 5, impact: 5, moneyAngle: 'invest' },
+      { id: 'move-closer-to-work', title: 'Move closer to work',                  theme: 'transport', actionType: 'personal',   cost: 4, impact: 4 },
+      { id: 'advocate-cycling',    title: 'Push for better cycling infrastructure', theme: 'transport', actionType: 'political', cost: 1, impact: 5 },
+      { id: 'advocate-public-transport', title: 'Campaign for better local public transport', theme: 'transport', actionType: 'political', cost: 1, impact: 5 },
+      // ── Energy ────────────────────────────────────────────────────────────
+      { id: 'open-windows',        title: 'Open windows overnight in summer',     theme: 'energy',    actionType: 'personal',   cost: 1, impact: 1, moneyAngle: 'save' },
+      { id: 'shorter-showers',     title: 'Have shorter showers',                 theme: 'energy',    actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'seal-gaps',           title: 'Seal gaps in doors and windows',       theme: 'energy',    actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'dress-up-heater',     title: 'Dress up to keep the heater down',     theme: 'energy',    actionType: 'personal',   cost: 1, impact: 1, moneyAngle: 'save' },
+      { id: 'buy-green-power',     title: 'Buy green power',                      theme: 'energy',    actionType: 'personal',   cost: 1, impact: 3 },
+      { id: 'led-lights',          title: 'Change lights to LED',                 theme: 'energy',    actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'insulate-roof',       title: 'Insulate the roof',                    theme: 'energy',    actionType: 'personal',   cost: 3, impact: 4, moneyAngle: 'invest' },
+      { id: 'insulate-floor',      title: 'Insulate the floor',                   theme: 'energy',    actionType: 'personal',   cost: 3, impact: 3, moneyAngle: 'invest' },
+      { id: 'insulate-walls',      title: 'Insulate the walls',                   theme: 'energy',    actionType: 'personal',   cost: 4, impact: 4, moneyAngle: 'invest' },
+      { id: 'deciduous-vine',      title: 'Grow a deciduous vine for shade',      theme: 'energy',    actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'heat-pump-hot-water', title: 'Install heat pump hot water',          theme: 'energy',    actionType: 'personal',   cost: 3, impact: 3, moneyAngle: 'invest' },
+      { id: 'electric-heating',    title: 'Install electric heating and cooling', theme: 'energy',    actionType: 'personal',   cost: 4, impact: 4, moneyAngle: 'invest' },
+      { id: 'install-solar',       title: 'Install solar panels',                 theme: 'energy',    actionType: 'personal',   cost: 4, impact: 5, moneyAngle: 'invest' },
+      { id: 'double-glaze',        title: 'Double glaze windows',                 theme: 'energy',    actionType: 'personal',   cost: 4, impact: 3, moneyAngle: 'invest' },
+      { id: 'get-a-battery',       title: 'Get a battery',                        theme: 'energy',    actionType: 'personal',   cost: 5, impact: 4, moneyAngle: 'invest' },
+      { id: 'buy-efficient-home',  title: 'Buy an energy efficient home',         theme: 'energy',    actionType: 'personal',   cost: 5, impact: 5, moneyAngle: 'invest' },
+      { id: 'fully-electrify',     title: 'Fully electrify and add battery',      theme: 'energy',    actionType: 'personal',   cost: 5, impact: 5, moneyAngle: 'invest' },
+      { id: 'advocate-renewable',  title: 'Call for 100% renewable energy in your council', theme: 'energy', actionType: 'political', cost: 1, impact: 5 },
+      { id: 'push-workplace-energy', title: 'Push for renewable energy at your workplace or school', theme: 'energy', actionType: 'political', cost: 1, impact: 4 },
+      // ── Stuff ─────────────────────────────────────────────────────────────
+      { id: 'try-not-buying',      title: 'Try not buying something',             theme: 'stuff',     actionType: 'personal',   cost: 1, impact: 1, moneyAngle: 'save' },
+      { id: 'try-fixing',          title: 'Try fixing something',                 theme: 'stuff',     actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'waste-free-shopping', title: 'Take a waste-free shopping trip',      theme: 'stuff',     actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'buy-local-quality',   title: 'Buy local, quality and fixable',       theme: 'stuff',     actionType: 'personal',   cost: 2, impact: 3, moneyAngle: 'save' },
+      { id: 'sorting-system',      title: 'Set up a sorting system in the kitchen', theme: 'stuff',   actionType: 'personal',   cost: 1, impact: 2 },
+      { id: 'buy-less-challenge',  title: 'Take the 6-month buy less stuff challenge', theme: 'stuff', actionType: 'personal',  cost: 1, impact: 3, moneyAngle: 'save' },
+      { id: 'empty-landfill-bin',  title: 'Set a goal for a nearly empty landfill bin', theme: 'stuff', actionType: 'personal', cost: 1, impact: 3, moneyAngle: 'save' },
+      { id: 'repair-cafe',         title: 'Join or host a repair café',           theme: 'stuff',     actionType: 'community',  cost: 1, impact: 3, moneyAngle: 'save' },
+      { id: 'neighbourhood-composting', title: 'Start a neighbourhood composting scheme', theme: 'stuff', actionType: 'community', cost: 1, impact: 3 },
+      { id: 'advocate-right-repair', title: 'Support right-to-repair legislation', theme: 'stuff',    actionType: 'political',  cost: 1, impact: 5 },
+      // ── Nature ────────────────────────────────────────────────────────────
+      { id: 'bush-walk',           title: 'Go for a bush walk',                   theme: 'nature',    actionType: 'personal',   cost: 1, impact: 1 },
+      { id: 'nature-sitting-spot', title: 'Create a nature sitting spot',         theme: 'nature',    actionType: 'personal',   cost: 1, impact: 1 },
+      { id: 'frog-pond',           title: 'Build a frog pond',                    theme: 'nature',    actionType: 'personal',   cost: 2, impact: 3 },
+      { id: 'plant-native-tree',   title: 'Plant a native tree, shrub and grasses', theme: 'nature',  actionType: 'personal',   cost: 1, impact: 3 },
+      { id: 'small-native-garden', title: 'Create a small native garden',         theme: 'nature',    actionType: 'personal',   cost: 2, impact: 3 },
+      { id: 'leave-mess-insects',  title: 'Leave mess in garden for insect habitat', theme: 'nature', actionType: 'personal',   cost: 1, impact: 2 },
+      { id: 'collect-rainwater',   title: 'Collect and use rainwater',            theme: 'nature',    actionType: 'personal',   cost: 2, impact: 2 },
+      { id: 'bird-boxes',          title: 'Install bird boxes',                   theme: 'nature',    actionType: 'personal',   cost: 1, impact: 2 },
+      { id: 'nature-strip-natives',title: 'Plant the nature strip with natives',  theme: 'nature',    actionType: 'community',  cost: 1, impact: 3 },
+      { id: 'local-native-garden', title: 'Create a local native garden',         theme: 'nature',    actionType: 'community',  cost: 2, impact: 4 },
+      { id: 'cat-inside',          title: 'Keep your cat inside',                 theme: 'nature',    actionType: 'personal',   cost: 1, impact: 3 },
+      { id: 'donate-conservation', title: 'Donate to local conservation projects', theme: 'nature',   actionType: 'community',  cost: 2, impact: 4 },
+      { id: 'nature-covenant',     title: 'Put a nature covenant on your land',   theme: 'nature',    actionType: 'personal',   cost: 2, impact: 5 },
+      { id: 'donate-revegetation', title: 'Donate to local revegetation project', theme: 'nature',    actionType: 'community',  cost: 2, impact: 4 },
+      { id: 'volunteer-conservation', title: 'Volunteer with a local conservation group', theme: 'nature', actionType: 'community', cost: 1, impact: 4 },
+      { id: 'neighbourhood-planting', title: 'Join a local planting day',         theme: 'nature',    actionType: 'community',  cost: 1, impact: 3 },
+      { id: 'attend-council',      title: 'Attend a council meeting on local sustainability', theme: 'nature', actionType: 'political', cost: 1, impact: 4 },
+      { id: 'advocate-green-space',title: 'Campaign for more local green space',  theme: 'nature',    actionType: 'political',  cost: 1, impact: 4 },
+      { id: 'advocate-nature-laws',title: 'Support stronger nature protection laws', theme: 'nature', actionType: 'political',  cost: 1, impact: 5 },
+      { id: 'join-climate-group',  title: 'Join a local climate or environment group', theme: 'nature', actionType: 'political', cost: 1, impact: 4 },
+      // ── Food ──────────────────────────────────────────────────────────────
+      { id: 'less-red-meat-try',   title: 'Try buying less red meat',             theme: 'food',      actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'buy-seasonal',        title: 'Buy seasonal',                         theme: 'food',      actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'grow-own-herbs',      title: 'Grow own herbs',                       theme: 'food',      actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'eat-leftovers',       title: 'Eat leftovers',                        theme: 'food',      actionType: 'personal',   cost: 1, impact: 1, moneyAngle: 'save' },
+      { id: 'buy-what-you-need',   title: 'Buy the food you need',                theme: 'food',      actionType: 'personal',   cost: 1, impact: 2, moneyAngle: 'save' },
+      { id: 'eat-less-red-meat',   title: 'Eat less red meat',                    theme: 'food',      actionType: 'personal',   cost: 1, impact: 3, moneyAngle: 'save' },
+      { id: 'eat-less-meat',       title: 'Eat less meat',                        theme: 'food',      actionType: 'personal',   cost: 1, impact: 3, moneyAngle: 'save' },
+      { id: 'eat-less-dairy',      title: 'Eat less dairy',                       theme: 'food',      actionType: 'personal',   cost: 1, impact: 3, moneyAngle: 'save' },
+      { id: 'wicking-bed',         title: 'Build a wicking bed veggie garden',    theme: 'food',      actionType: 'personal',   cost: 2, impact: 3, moneyAngle: 'invest' },
+      { id: 'veggie-garden',       title: 'Build your own veggie garden',         theme: 'food',      actionType: 'personal',   cost: 2, impact: 3, moneyAngle: 'invest' },
+      { id: 'buy-local-organic',   title: 'Buy local, organic and regenerative',  theme: 'food',      actionType: 'personal',   cost: 2, impact: 4 },
+      { id: 'fruit-trees',         title: 'Plant and manage your own fruit trees', theme: 'food',     actionType: 'personal',   cost: 2, impact: 3, moneyAngle: 'invest' },
+      { id: 'chook-shed',          title: 'Build your own chook shed',            theme: 'food',      actionType: 'personal',   cost: 3, impact: 3, moneyAngle: 'invest' },
+      { id: 'vegan-vegetarian',    title: 'Become vegan or vegetarian',           theme: 'food',      actionType: 'personal',   cost: 1, impact: 5, moneyAngle: 'save' },
+      { id: 'community-garden',    title: 'Join a community garden',              theme: 'food',      actionType: 'community',  cost: 1, impact: 3 },
+      { id: 'support-food-policy', title: 'Support local food sovereignty and sustainable farming policy', theme: 'food', actionType: 'political', cost: 1, impact: 5 },
+      // ── Money ─────────────────────────────────────────────────────────────
+      { id: 'switch-super',        title: 'Switch super to zero fossil fuels',    theme: 'money',     actionType: 'personal',   cost: 1, impact: 5 },
+      { id: 'switch-banks',        title: 'Shift banks away from fossil fuels',   theme: 'money',     actionType: 'personal',   cost: 1, impact: 4 },
+      { id: 'shift-shares',        title: 'Shift shares out of fossil fuels',     theme: 'money',     actionType: 'personal',   cost: 1, impact: 5 },
+      { id: 'electrify-house',     title: 'Electrify your house',                 theme: 'money',     actionType: 'personal',   cost: 4, impact: 5 },
+      { id: 'invest-solar',        title: 'Invest in solar PV',                   theme: 'money',     actionType: 'personal',   cost: 4, impact: 4 },
+      { id: 'invest-ev',           title: 'Invest in an EV',                      theme: 'money',     actionType: 'personal',   cost: 5, impact: 5 },
+      { id: 'community-solar-farm',title: 'Invest in a community solar farm',     theme: 'money',     actionType: 'community',  cost: 3, impact: 4 },
+      { id: 'donate-env-groups',   title: 'Donate to local environmental groups', theme: 'money',     actionType: 'community',  cost: 2, impact: 4 },
+      { id: 'write-to-mp',         title: 'Write to your MP about climate action', theme: 'money',    actionType: 'political',  cost: 1, impact: 5 },
+      { id: 'vote-climate',        title: 'Vote for candidates with strong climate policies', theme: 'money', actionType: 'political', cost: 1, impact: 5 },
+      { id: 'push-workplace-sustainability', title: 'Push for sustainability at your workplace', theme: 'money', actionType: 'political', cost: 1, impact: 4 },
+      { id: 'talk-to-friends',     title: 'Talk to friends and family about climate action', theme: 'money', actionType: 'political', cost: 1, impact: 4 },
+      { id: 'divest-campaign',     title: 'Support fossil fuel divestment campaigns', theme: 'money', actionType: 'political',  cost: 1, impact: 5 },
+      // ── Sprint actions (pre-loaded when a One Month Sprint is started) ────────
+      { id: 'sprint-buy-less',      title: 'Focus on buying less for a month',              theme: 'stuff',     actionType: 'personal', cost: 1, impact: 2, isSprint: true },
+      { id: 'sprint-walk-more',     title: 'Focus on trying to walk more for a month',      theme: 'transport', actionType: 'personal', cost: 1, impact: 2, isSprint: true },
+      { id: 'sprint-ride-bike',     title: 'Focus on planning to ride a bike for a month',  theme: 'transport', actionType: 'personal', cost: 1, impact: 2, isSprint: true },
+      { id: 'sprint-heating',       title: 'Focus on reducing the heating bill for a month', theme: 'energy',   actionType: 'personal', cost: 1, impact: 2, isSprint: true },
+      { id: 'sprint-local-veggies', title: 'Focus on buying local veggies for a month',     theme: 'food',      actionType: 'personal', cost: 1, impact: 2, isSprint: true },
+    ];
+
+    const LIFE_STAGES = [
+      { value: 'student',            label: 'Student' },
+      { value: 'young_professional', label: 'Young Professional' },
+      { value: 'young_family',       label: 'Young Family' },
+      { value: 'family',             label: 'Family' },
+      { value: 'family_with_teens',  label: 'Family with Teens' },
+      { value: 'empty_nester',       label: 'Empty Nester' },
+      { value: 'mature_professional',label: 'Mature Professional' },
+      { value: 'retiree',            label: 'Retiree' },
+      { value: 'pensioner',          label: 'Pensioner' },
+    ];
+
+    const PLAN_TYPES = [
+      { value: 'standard',    label: 'Standard' },
+      { value: 'quick_wins',  label: 'Quick Wins' },
+      { value: 'behavioural', label: 'Behavioural' },
+      { value: 'ambitious',   label: 'Ambitious' },
+      { value: 'blank',       label: 'Blank Plan' },
+    ];
+
+    const YEAR_BUCKETS = [
+      { value: 'this_year',   label: 'This year' },
+      { value: 'next_year',   label: 'Next year' },
+      { value: 'three_years', label: '3 years' },
+      { value: 'five_years',  label: '5 years' },
+      { value: 'ten_years',   label: '10 years' },
+      { value: 'ongoing',     label: 'Ongoing' },
+    ];
+
+    const PLAN_YEAR_BUCKETS = YEAR_BUCKETS.filter(b => b.value !== 'ongoing');
+
+    const TEMPLATES = {
+      student: {
+        this_year:   ['led-lights', 'seal-gaps', 'try-riding-a-bike', 'try-catching-a-bus', 'grow-own-herbs'],
+        next_year:   ['waste-free-shopping', 'eat-less-meat', 'join-community-bike'],
+        three_years: ['buy-a-bike', 'switch-super'],
+        five_years:  ['buy-efficient-home'],
+        ten_years:   ['install-solar', 'buy-an-ev'],
+      },
+      young_professional: {
+        this_year:   ['switch-super', 'switch-banks', 'led-lights', 'try-riding-a-bike', 'buy-green-power'],
+        next_year:   ['get-an-e-bike', 'install-solar'],
+        three_years: ['electrify-house', 'ditch-one-car'],
+        five_years:  ['buy-an-ev', 'insulate-roof'],
+        ten_years:   ['buy-efficient-home', 'fully-electrify'],
+      },
+      young_family: {
+        this_year:   ['led-lights', 'seal-gaps', 'grow-own-herbs', 'try-riding-a-bike', 'buy-green-power'],
+        next_year:   ['switch-super', 'small-native-garden', 'waste-free-shopping'],
+        three_years: ['install-solar', 'get-an-e-bike'],
+        five_years:  ['electrify-house', 'buy-an-ev'],
+        ten_years:   ['insulate-roof', 'fully-electrify', 'donate-conservation'],
+      },
+      family: {
+        this_year:   ['install-solar', 'try-riding-a-bike', 'grow-own-herbs'],
+        next_year:   ['switch-super', 'small-native-garden'],
+        three_years: ['electrify-house', 'get-an-e-bike'],
+        five_years:  ['buy-an-ev'],
+        ten_years:   ['insulate-floor', 'fully-electrify', 'donate-conservation'],
+      },
+      family_with_teens: {
+        this_year:   ['switch-super', 'switch-banks', 'try-riding-a-bike', 'grow-own-herbs', 'eat-less-meat'],
+        next_year:   ['install-solar', 'small-native-garden'],
+        three_years: ['electrify-house', 'get-an-e-bike', 'ditch-one-car'],
+        five_years:  ['buy-an-ev', 'insulate-roof'],
+        ten_years:   ['fully-electrify', 'donate-conservation', 'community-solar-farm'],
+      },
+      empty_nester: {
+        this_year:   ['install-solar', 'switch-super', 'switch-banks', 'small-native-garden', 'bush-walk'],
+        next_year:   ['electrify-house', 'insulate-roof', 'buy-green-power'],
+        three_years: ['buy-an-ev', 'double-glaze', 'local-native-garden'],
+        five_years:  ['get-a-battery', 'donate-conservation'],
+        ten_years:   ['community-solar-farm', 'nature-covenant', 'fully-electrify'],
+      },
+      mature_professional: {
+        this_year:   ['switch-super', 'switch-banks', 'led-lights', 'buy-green-power', 'try-riding-a-bike'],
+        next_year:   ['install-solar', 'get-an-e-bike'],
+        three_years: ['electrify-house', 'ditch-one-car', 'insulate-roof'],
+        five_years:  ['buy-an-ev', 'insulate-floor'],
+        ten_years:   ['get-a-battery', 'fully-electrify', 'community-solar-farm'],
+      },
+      retiree: {
+        this_year:   ['install-solar', 'small-native-garden', 'switch-super', 'switch-banks'],
+        next_year:   ['electrify-house', 'insulate-roof'],
+        three_years: ['buy-an-ev', 'insulate-floor'],
+        five_years:  ['double-glaze', 'donate-conservation'],
+        ten_years:   ['get-a-battery', 'community-solar-farm'],
+      },
+      pensioner: {
+        this_year:   ['led-lights', 'seal-gaps', 'buy-green-power', 'bush-walk'],
+        next_year:   ['grow-own-herbs', 'plant-native-tree'],
+        three_years: ['insulate-roof', 'small-native-garden'],
+        five_years:  ['install-solar'],
+        ten_years:   ['donate-revegetation'],
+      },
+    };
+
+    // Plan type templates — applied on top of the life stage
+    const PLAN_TYPE_OVERRIDES = {
+      blank: () => [],
+
+      quick_wins: () => ACTIONS
+        .filter(a => a.cost === 1 && a.impact >= 2)
+        .map(a => ({ actionId: a.id, year: 'this_year', addedAt: new Date().toISOString() })),
+
+      behavioural: () => {
+        const ids = [
+          'try-walking','walk-to-work','try-riding-a-bike','ride-to-work','try-catching-a-bus',
+          'catch-a-bus-to-work','drive-less','shorter-showers','open-windows','seal-gaps',
+          'dress-up-heater','deciduous-vine','less-red-meat-try','buy-seasonal','grow-own-herbs',
+          'eat-leftovers','buy-what-you-need','eat-less-red-meat','eat-less-meat','eat-less-dairy',
+          'vegan-vegetarian','try-not-buying','try-fixing','waste-free-shopping','buy-less-challenge',
+          'bush-walk','nature-sitting-spot','leave-mess-insects','cat-inside','join-community-bike',
+          'shorter-showers','less-red-meat-try','drive-less','eat-leftovers','buy-what-you-need',
+        ];
+        const yearMap = {
+          'try-walking':'this_year','try-riding-a-bike':'this_year','try-catching-a-bus':'this_year',
+          'shorter-showers':'this_year','open-windows':'this_year','seal-gaps':'this_year',
+          'dress-up-heater':'this_year','less-red-meat-try':'this_year','buy-seasonal':'this_year',
+          'grow-own-herbs':'this_year','eat-leftovers':'this_year','try-not-buying':'this_year',
+          'bush-walk':'this_year','nature-sitting-spot':'this_year','try-less-power':'this_year',
+          'try-shorter-showers':'this_year','try-less-meat-m':'this_year',
+        };
+        return ids.map(id => ({
+          actionId: id,
+          year: yearMap[id] || 'next_year',
+          addedAt: new Date().toISOString(),
+        }));
+      },
+
+      ambitious: (lifeStage) => {
+        const base = TEMPLATES[lifeStage] || {};
+        const items = [];
+        for (const [year, ids] of Object.entries(base)) {
+          for (const id of ids) items.push({ actionId: id, year, addedAt: new Date().toISOString() });
+        }
+        const inPlan = new Set(items.map(i => i.actionId));
+        // Add all high-impact actions not already included
+        ACTIONS
+          .filter(a => a.impact >= 4 && !inPlan.has(a.id))
+          .forEach(a => items.push({ actionId: a.id, year: 'ten_years', addedAt: new Date().toISOString() }));
+        return items;
+      },
+    };
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    const getAction = (id) => ACTIONS.find(a => a.id === id);
+    const LS_USER = 'dp_user', LS_PLAN = 'dp_plan', LS_COMMUNITY = 'dp_community';
+    const loadUser = () => { try { return JSON.parse(localStorage.getItem(LS_USER)) || null; } catch { return null; } };
+    const loadPlan = () => { try { return JSON.parse(localStorage.getItem(LS_PLAN)) || []; } catch { return []; } };
+    const saveUser = (u) => localStorage.setItem(LS_USER, JSON.stringify(u));
+    const savePlan = (p) => localStorage.setItem(LS_PLAN, JSON.stringify(p));
+    const LS_SPRINT = 'dp_sprint';
+    const loadSprint = () => { try { return JSON.parse(localStorage.getItem(LS_SPRINT)) || null; } catch { return null; } };
+    const saveSprint = (s) => s ? localStorage.setItem(LS_SPRINT, JSON.stringify(s)) : localStorage.removeItem(LS_SPRINT);
+
+    function recordCommunityAction(actionId, postcode) {
+      try {
+        const data = JSON.parse(localStorage.getItem(LS_COMMUNITY)) || {};
+        data[postcode] = [...new Set([...(data[postcode] || []), actionId])];
+        localStorage.setItem(LS_COMMUNITY, JSON.stringify(data));
+      } catch {}
+    }
+
+    function buildInitialPlan(lifeStage, planType) {
+      const override = PLAN_TYPE_OVERRIDES[planType];
+      if (override) return override(lifeStage);
+      // Standard: use life stage template
+      const template = TEMPLATES[lifeStage] || {};
+      const items = [];
+      for (const [year, ids] of Object.entries(template)) {
+        for (const actionId of ids) {
+          items.push({ actionId, year, addedAt: new Date().toISOString() });
+        }
+      }
+      return items;
+    }
+
+    // ── Components ────────────────────────────────────────────────────────────
+
+    function Onboarding({ onComplete }) {
+      const [email, setEmail]         = useState('');
+      const [suburb, setSuburb]       = useState('');
+      const [postcode, setPostcode]   = useState('');
+      const [lifeStage, setLifeStage] = useState('');
+      const [planType, setPlanType]   = useState('standard');
+      const [error, setError]         = useState('');
+
+      function handleSubmit(e) {
+        e.preventDefault();
+        if (!email.trim() || !suburb.trim() || !postcode.trim() || !lifeStage) {
+          setError('Please fill in all fields.'); return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+          setError('Please enter a valid email address.'); return;
+        }
+        onComplete({ email: email.trim(), suburb: suburb.trim(), postcode: postcode.trim(), lifeStage, planType });
+      }
+
+      return (
+        <div className="onboarding">
+          <div className="onboarding-inner">
+            <div className="onboarding-logo">🌿</div>
+            <h1 className="onboarding-title">Don't Panic</h1>
+            <p className="onboarding-sub">
+              Your personal plan to care for people, planet and local place —
+              at your own pace, budget and life stage.
+            </p>
+            <form className="onboarding-form" onSubmit={handleSubmit} noValidate>
+              <div className="field">
+                <label htmlFor="ob-email">Email</label>
+                <input id="ob-email" type="email" value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com" autoComplete="email" inputMode="email" />
+              </div>
+              <div className="field">
+                <label htmlFor="ob-suburb">Suburb</label>
+                <input id="ob-suburb" type="text" value={suburb}
+                  onChange={e => setSuburb(e.target.value)}
+                  placeholder="e.g. Fitzroy" autoComplete="address-level2" />
+              </div>
+              <div className="field">
+                <label htmlFor="ob-postcode">Postcode</label>
+                <input id="ob-postcode" type="text" value={postcode}
+                  onChange={e => setPostcode(e.target.value)}
+                  placeholder="e.g. 3065" autoComplete="postal-code" inputMode="numeric" maxLength={10} />
+              </div>
+              <div className="field">
+                <label htmlFor="ob-stage">Life stage</label>
+                <div className="select-wrap">
+                  <select id="ob-stage" value={lifeStage} onChange={e => setLifeStage(e.target.value)}>
+                    <option value="" disabled>Choose your life stage</option>
+                    {LIFE_STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor="ob-type">Plan type</label>
+                <div className="select-wrap">
+                  <select id="ob-type" value={planType} onChange={e => setPlanType(e.target.value)}>
+                    {PLAN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              {error && <p className="form-error">{error}</p>}
+              <button type="submit" className="btn-primary btn-full">Build my plan</button>
+            </form>
+            <p className="onboarding-note">
+              We save your details on this device so you're recognised next time. No password needed.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    function Header({ user, planItems }) {
+      const stageName = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
+      const done      = planItems.filter(p => p.year === 'done').length;
+      const remaining = planItems.filter(p => p.year !== 'done').length;
+      return (
+        <header className="app-header">
+          <div className="header-top">
+            <div className="header-brand">
+              <span className="header-logo">🌿</span>
+              <span className="header-name">Don't Panic</span>
+            </div>
+          </div>
+          <div className="header-user">
+            <div className="header-user-info">
+              <span className="header-display-name">{user.email}</span>
+              <span className="header-meta">{stageName} · {user.suburb} {user.postcode}</span>
+            </div>
+            <div className="header-pills">
+              {done > 0 && <span className="pill pill-done">{done} done</span>}
+              <span className="pill pill-remaining">{remaining} to go</span>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    function ActionCardPlan({ planItem, onTap }) {
+      const action    = getAction(planItem.actionId);
+      if (!action) return null;
+      const isDone    = planItem.year === 'done';
+      const isOngoing = planItem.year === 'ongoing';
+      const theme     = THEMES[action.theme];
+      if (isDone) {
+        return (
+          <div className="action-card action-card--done" onClick={() => onTap(planItem.actionId)}>
+            <span className="card-theme-label">done</span>
+            <span className="card-title card-title--done">{action.title}</span>
+          </div>
+        );
+      }
+      return (
+        <div className="action-card"
+          style={{ background: theme.bg, borderColor: theme.border }}
+          onClick={() => onTap(planItem.actionId)}>
+          <span className="card-theme-label" style={{ color: theme.text }}>{action.theme}</span>
+          <span className="card-title" style={{ color: theme.text }}>{action.title}</span>
+          {isOngoing && (
+            <span className="card-ongoing-badge" style={{ color: theme.text, borderColor: theme.border }}>↺ Ongoing</span>
+          )}
+        </div>
+      );
+    }
+
+    const SPRINT_PRELOAD_IDS = ['sprint-buy-less','sprint-walk-more','sprint-ride-bike','sprint-heating','sprint-local-veggies'];
+
+    function sprintDaysLeft(sprint) {
+      if (!sprint?.startDate) return 30;
+      const ms = Date.now() - new Date(sprint.startDate).getTime();
+      return Math.max(0, 30 - Math.floor(ms / 86400000));
+    }
+
+    // Sprint section shown inside MyPlan (card grid style)
+    function SprintCards({ planItems, onTapCard, sprint, onEnd }) {
+      const items = planItems.filter(p => p.year === 'sprint');
+      const left  = sprintDaysLeft(sprint);
+      return (
+        <div className="sprint-section">
+          <div className="sprint-header">
+            <div className="sprint-header-info">
+              <span className="sprint-header-icon">⚡</span>
+              <div>
+                <div className="sprint-title">One Month Sprint</div>
+                <div className="sprint-days">{left} day{left !== 1 ? 's' : ''} remaining</div>
+              </div>
+            </div>
+            <button className="sprint-end-btn" onClick={onEnd}>End sprint</button>
+          </div>
+          <div className="sprint-cards">
+            {items.length === 0
+              ? <p className="sprint-empty">No actions here yet. Open any action card and choose ⚡ One Month Sprint.</p>
+              : <div className="card-grid">{items.map(item => <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard} />)}</div>
+            }
+          </div>
+        </div>
+      );
+    }
+
+    // Sprint section shown inside YourPlan (list style)
+    function SprintList({ planItems, sprint, onEnd }) {
+      const items = planItems.filter(p => p.year === 'sprint');
+      const left  = sprintDaysLeft(sprint);
+      return (
+        <div className="sprint-section" style={{ marginBottom: 24 }}>
+          <div className="sprint-header">
+            <div className="sprint-header-info">
+              <span className="sprint-header-icon">⚡</span>
+              <div>
+                <div className="sprint-title">One Month Sprint</div>
+                <div className="sprint-days">{left} day{left !== 1 ? 's' : ''} remaining</div>
+              </div>
+            </div>
+            <button className="sprint-end-btn" onClick={onEnd}>End sprint</button>
+          </div>
+          <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {items.length === 0
+              ? <p className="sprint-empty">No actions here yet. Open any action from Manage and choose ⚡ One Month Sprint.</p>
+              : items.map(item => {
+                  const action = getAction(item.actionId);
+                  if (!action) return null;
+                  const theme = THEMES[action.theme];
+                  return (
+                    <div key={item.actionId} className="your-plan-item"
+                      style={{ background: theme.bg, borderLeftColor: theme.border }}>
+                      <div className="your-plan-item-text">
+                        <span className="your-plan-item-cat" style={{ color: theme.text }}>{action.theme}</span>
+                        <span className="your-plan-item-title" style={{ color: theme.text }}>{action.title}</span>
+                      </div>
+                    </div>
+                  );
+                })
+            }
+          </div>
+        </div>
+      );
+    }
+
+    function MyPlan({ planItems, onTapCard, sprint, onStartSprint, onEndSprint }) {
+      const done    = planItems.filter(p => p.year === 'done');
+      const ongoing = planItems.filter(p => p.year === 'ongoing');
+      return (
+        <div className="screen">
+          {/* Sprint section — shown at top when active */}
+          {sprint
+            ? <SprintCards planItems={planItems} onTapCard={onTapCard} sprint={sprint} onEnd={onEndSprint} />
+            : <button className="sprint-cta" onClick={onStartSprint}>
+                <span className="sprint-cta-icon">⚡</span>
+                <div className="sprint-cta-body">
+                  <div className="sprint-cta-title">Start a One Month Sprint</div>
+                  <div className="sprint-cta-desc">Pick a focus area and tackle a few actions intensely for 30 days.</div>
+                </div>
+                <span className="sprint-cta-arrow">›</span>
+              </button>
+          }
+          {done.length > 0 && (
+            <section className="plan-section">
+              <div className="bucket-header bucket-header--done">
+                <span className="bucket-title">Celebrating wins</span>
+                <span className="bucket-count">{done.length}</span>
+              </div>
+              <div className="card-grid">
+                {done.map(item => <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard} />)}
+              </div>
+            </section>
+          )}
+          <section className="plan-section">
+            <h2 className="section-title">Your plan</h2>
+            {PLAN_YEAR_BUCKETS.map(bucket => {
+              const specific = planItems.filter(p => p.year === bucket.value);
+              const all      = [...specific, ...ongoing];
+              if (all.length === 0) return null;
+              return (
+                <div key={bucket.value} className="bucket">
+                  <div className="bucket-header">
+                    <span className="bucket-title">{bucket.label}</span>
+                    <span className="bucket-count">{all.length}</span>
+                  </div>
+                  <div className="card-grid">
+                    {specific.map(item => (
+                      <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard} />
+                    ))}
+                    {ongoing.map(item => (
+                      <ActionCardPlan key={`${bucket.value}-${item.actionId}`} planItem={item} onTap={onTapCard} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            {planItems.filter(p => p.year !== 'done').length === 0 && (
+              <p className="empty-state">Your plan is empty. Head to All Actions to add some.</p>
+            )}
+          </section>
+        </div>
+      );
+    }
+
+    function AllActionsHub({ onSelect }) {
+      const count = (type) => type === 'all' ? ACTIONS.length : ACTIONS.filter(a => a.actionType === type).length;
+      const options = [
+        { key: 'personal',  label: 'Personal',    emoji: '🏠', desc: 'Your everyday choices at home, in the kitchen and on the road', mod: '--personal' },
+        { key: 'community', label: 'Community',   emoji: '🤝', desc: 'Actions you take together with neighbours and local groups',     mod: '--community' },
+        { key: 'political', label: 'Political',   emoji: '📢', desc: 'Advocacy, voting and pushing for systemic change',               mod: '--political' },
+        { key: 'all',       label: 'All Actions', emoji: '🗂️', desc: 'Browse the full library across all types',                      mod: '--all' },
+      ];
+      return (
+        <div className="screen">
+          <p className="hub-intro">Actions come in different shapes. Pick the kind you're looking for.</p>
+          <div className="hub-grid">
+            {options.map(opt => (
+              <button key={opt.key} className={`hub-card hub-card${opt.mod}`} onClick={() => onSelect(opt.key)}>
+                <span className="hub-emoji">{opt.emoji}</span>
+                <span className="hub-label">{opt.label}</span>
+                <span className="hub-desc">{opt.desc}</span>
+                <span className="hub-count">{count(opt.key)} action{count(opt.key) !== 1 ? 's' : ''}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    const THEME_FILTERS = ['All', 'Transport', 'Energy', 'Nature', 'Food', 'Money', 'Stuff'];
+
+    function AllActions({ planItems, onTapCard, typeFilter = 'all', onBack }) {
+      const [themeFilter, setThemeFilter] = useState('All');
+      const [sort, setSort]               = useState('default');
+      const inPlanIds    = new Set(planItems.map(p => p.actionId));
+      const isMoneyView  = themeFilter === 'Money';
+
+      const TYPE_LABELS = { personal: 'Personal', community: 'Community', political: 'Political', all: 'All' };
+
+      let visible = ACTIONS.filter(a => {
+        const typeMatch  = typeFilter === 'all' || a.actionType === typeFilter;
+        const themeMatch = themeFilter === 'All'
+          ? true
+          : isMoneyView ? (a.theme === 'money' || !!a.moneyAngle)
+          : a.theme === themeFilter.toLowerCase();
+        return typeMatch && themeMatch;
+      });
+
+      if (sort === 'low_cost')    visible = [...visible].sort((a, b) => a.cost - b.cost);
+      if (sort === 'high_impact') visible = [...visible].sort((a, b) => b.impact - a.impact);
+
+      // In Money view: native money actions first, then cross-category grouped by theme
+      if (isMoneyView && sort === 'default') {
+        visible = [
+          ...visible.filter(a => a.theme === 'money'),
+          ...visible.filter(a => a.theme !== 'money'),
+        ];
+      }
+
+      return (
+        <div className="screen">
+          {onBack && (
+            <button className="back-btn" onClick={onBack}>← All Actions</button>
+          )}
+          {typeFilter !== 'all' && (
+            <div className="type-header">{TYPE_LABELS[typeFilter]} actions</div>
+          )}
+          <div className="filter-row filter-row--scroll">
+            {THEME_FILTERS.map(t => (
+              <button key={t} className={`filter-chip${themeFilter === t ? ' filter-chip--active' : ''}`}
+                onClick={() => setThemeFilter(t)}>{t}</button>
+            ))}
+          </div>
+          <div className="filter-row">
+            {[{ v:'default',label:'Default' },{ v:'low_cost',label:'Low cost first' },{ v:'high_impact',label:'High impact first' }].map(s => (
+              <button key={s.v} className={`filter-chip${sort === s.v ? ' filter-chip--active' : ''}`}
+                onClick={() => setSort(s.v)}>{s.label}</button>
+            ))}
+          </div>
+          <div className="card-grid card-grid--library">
+            {visible.map(action => {
+              const theme        = THEMES[action.theme];
+              const inPlan       = inPlanIds.has(action.id);
+              const crossCategory = isMoneyView && action.moneyAngle && action.theme !== 'money';
+              const badgeLabel   = action.moneyAngle === 'save' ? 'Save $' : 'Invest $';
+              return (
+                <div key={action.id}
+                  className={`action-card action-card--library${inPlan ? ' action-card--in-plan' : ''}`}
+                  style={{ background: theme.bg, borderColor: theme.border }}
+                  onClick={() => onTapCard(action.id)}>
+                  <span className="card-theme-label" style={{ color: theme.text }}>
+                    {action.theme}{crossCategory ? <span className="card-money-tag"> · {badgeLabel}</span> : ''}
+                  </span>
+                  <span className="card-title" style={{ color: theme.text }}>{action.title}</span>
+                  {inPlan && (
+                    <span className="card-in-plan-badge" style={{ background: theme.border, color: theme.text }}>In plan</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    const REMINDER_COPY = {
+      1: (t) => `Hey — a month ago you added "${t}" to your plan for this year. How's it going? No pressure, just checking in.`,
+      3: (t) => `Three months since you planned to ${t.toLowerCase()}. If you've started — nice work. If not, there's still plenty of time.`,
+      6: (t) => `Halfway through the year! You had a goal to ${t.toLowerCase()}. Still on track? You've got this — and if life got in the way, that's completely fine too.`,
+    };
+
+    function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }
+    function fmtDate(d) { return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }); }
+
+    function Reminders({ planItems, onUpdatePlan }) {
+      const now = new Date();
+      const reminders = [];
+      for (const item of planItems.filter(p => p.year === 'this_year' && p.addedAt)) {
+        const action = getAction(item.actionId);
+        if (!action) continue;
+        const added = new Date(item.addedAt);
+        for (const months of [1, 3, 6]) {
+          const triggerDate = addMonths(added, months);
+          reminders.push({
+            id: `${item.actionId}-${months}m`, actionId: item.actionId,
+            actionTitle: action.title, triggerDate, months,
+            sent: triggerDate <= now,
+            copy: REMINDER_COPY[months](action.title),
+          });
+        }
+      }
+      reminders.sort((a, b) => a.triggerDate - b.triggerDate);
+      const upcoming = reminders.filter(r => !r.sent);
+      const sent     = reminders.filter(r => r.sent).reverse();
+
+      if (reminders.length === 0) {
+        return (
+          <div className="screen">
+            <div className="empty-state-center">
+              <p className="empty-icon">📬</p>
+              <p className="empty-title">No reminders yet</p>
+              <p className="empty-body">Add actions to <strong>This year</strong> in your plan and we'll schedule friendly nudges at 1, 3 and 6 months.</p>
+            </div>
+          </div>
+        );
+      }
+
+      const RCard = ({ r }) => (
+        <div className={`reminder-card${r.sent ? ' reminder-card--sent' : ''}`}>
+          <div className="reminder-meta">
+            <span className="reminder-tag">{r.months} month{r.months > 1 ? 's' : ''}</span>
+            <span className="reminder-date">{fmtDate(r.triggerDate)}</span>
+          </div>
+          <p className="reminder-copy">{r.copy}</p>
+          <button className="reminder-link" onClick={() => onUpdatePlan(r.actionId)}>Update my plan</button>
+        </div>
+      );
+
+      return (
+        <div className="screen">
+          {upcoming.length > 0 && (
+            <section className="reminders-section">
+              <h2 className="section-title">Coming up</h2>
+              {upcoming.map(r => <RCard key={r.id} r={r} />)}
+            </section>
+          )}
+          {sent.length > 0 && (
+            <section className="reminders-section">
+              <h2 className="section-title">Sent</h2>
+              {sent.map(r => <RCard key={r.id} r={r} />)}
+            </section>
+          )}
+        </div>
+      );
+    }
+
+    function BottomSheet({ action, planItem, onMove, onDone, onRemove, onAdd, onClose, sprintActive }) {
+      const inPlan = !!planItem;
+      const theme  = action ? THEMES[action.theme] : null;
+      useEffect(() => {
+        const fn = e => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+      }, [onClose]);
+      if (!action) return null;
+      return (
+        <>
+          <div className="sheet-backdrop" onClick={onClose} />
+          <div className="sheet" role="dialog" aria-modal="true">
+            <div className="sheet-handle" />
+            <div className="sheet-chip"
+              style={{ background: theme?.bg, color: theme?.text, borderColor: theme?.border }}>
+              <span className="sheet-chip-theme">{action.theme}</span>
+              <span className="sheet-chip-title">{action.title}</span>
+            </div>
+            <h2 className="sheet-heading">
+              {inPlan ? 'Move to a different year, or mark as done' : 'Add to your plan'}
+            </h2>
+            <div className="sheet-year-grid">
+              {YEAR_BUCKETS.map(b => (
+                <button key={b.value}
+                  className={`sheet-year-btn${planItem?.year === b.value ? ' active' : ''}${b.value === 'ongoing' ? ' sheet-year-btn--ongoing' : ''}`}
+                  onClick={() => inPlan ? onMove(b.value) : onAdd(b.value)}>
+                  {b.value === 'ongoing' ? '↺ Ongoing — do this continuously' : b.label}
+                </button>
+              ))}
+              {sprintActive && (
+                <button
+                  className={`sheet-year-btn sheet-year-btn--sprint${planItem?.year === 'sprint' ? ' active' : ''}`}
+                  onClick={() => inPlan ? onMove('sprint') : onAdd('sprint')}>
+                  ⚡ One Month Sprint
+                </button>
+              )}
+            </div>
+            {inPlan && (
+              <button className="btn-primary btn-full sheet-done-btn" onClick={onDone}>
+                Mark as done
+              </button>
+            )}
+            {inPlan
+              ? <button className="sheet-remove-btn" onClick={onRemove}>Remove from plan</button>
+              : <button className="sheet-cancel-btn" onClick={onClose}>Cancel</button>
+            }
+          </div>
+        </>
+      );
+    }
+
+    // ── Your Plan ─────────────────────────────────────────────────────────────
+
+    function YourPlan({ user, planItems, sprint, onStartSprint, onEndSprint }) {
+      const stageName   = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
+      const planType    = PLAN_TYPES.find(t => t.value === user.planType)?.label ?? '';
+      const done        = planItems.filter(p => p.year === 'done');
+      const displayBuckets = [
+        ...PLAN_YEAR_BUCKETS,
+        { value: 'ongoing', label: 'Ongoing' },
+      ];
+
+      function buildShareText() {
+        let out = `My Don't Panic Action Plan\n`;
+        out += `${user.email} · ${user.suburb} ${user.postcode}\n`;
+        out += `${stageName}${planType ? ' · ' + planType : ''}\n\n`;
+        // Sprint items first
+        const sprintItems = planItems.filter(p => p.year === 'sprint');
+        if (sprintItems.length) {
+          out += `⚡ ONE MONTH SPRINT\n`;
+          sprintItems.forEach(item => { const a = getAction(item.actionId); if (a) out += `• ${a.title}\n`; });
+          out += '\n';
+        }
+        for (const b of displayBuckets) {
+          const items = planItems.filter(p => p.year === b.value);
+          if (!items.length) continue;
+          out += `${b.label.toUpperCase()}\n`;
+          items.forEach(item => {
+            const a = getAction(item.actionId);
+            if (a) out += `• ${a.title}\n`;
+          });
+          out += '\n';
+        }
+        if (done.length) {
+          out += `DONE ✓\n`;
+          done.forEach(item => {
+            const a = getAction(item.actionId);
+            if (a) out += `• ${a.title}\n`;
+          });
+          out += '\n';
+        }
+        out += `Generated with Don't Panic`;
+        return out;
+      }
+
+      async function handleShare() {
+        const text = buildShareText();
+        if (navigator.share) {
+          try { await navigator.share({ title: "My Don't Panic Action Plan", text }); }
+          catch (_) {}
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(text);
+          alert('Plan copied to clipboard!');
+        }
+      }
+
+      function handlePrint() { window.print(); }
+
+      const hasContent = planItems.filter(p => p.year !== 'done').length > 0;
+
+      return (
+        <div className="your-plan-screen">
+
+          {/* Print-only header */}
+          <div className="print-only print-header">
+            <div>
+              <div className="print-logo">🌿 Don't Panic</div>
+              <div className="print-user">{user.email} · {user.suburb} {user.postcode}</div>
+              <div className="print-meta">{stageName}{planType ? ' · ' + planType : ''}</div>
+            </div>
+            <div className="print-date">Printed {new Date().toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' })}</div>
+          </div>
+
+          {/* Toolbar */}
+          <div className="your-plan-toolbar">
+            <div>
+              <div className="your-plan-title">Your plan</div>
+              <div className="your-plan-subtitle">{stageName} · {user.suburb} {user.postcode}</div>
+            </div>
+            <div className="toolbar-btns">
+              <button className="toolbar-btn" onClick={handleShare}>
+                <span>↑</span> Share
+              </button>
+              <button className="toolbar-btn toolbar-btn--primary" onClick={handlePrint}>
+                <span>⎙</span> Print
+              </button>
+            </div>
+          </div>
+
+          {/* Wins */}
+          {done.length > 0 && (
+            <div className="your-plan-wins">
+              ✓ {done.length} action{done.length !== 1 ? 's' : ''} completed — nice work!
+            </div>
+          )}
+
+          {/* Sprint */}
+          {sprint
+            ? <SprintList planItems={planItems} sprint={sprint} onEnd={onEndSprint} />
+            : <button className="sprint-cta" onClick={onStartSprint}>
+                <span className="sprint-cta-icon">⚡</span>
+                <div className="sprint-cta-body">
+                  <div className="sprint-cta-title">Start a One Month Sprint</div>
+                  <div className="sprint-cta-desc">Focus on a handful of actions intensely for 30 days.</div>
+                </div>
+                <span className="sprint-cta-arrow">›</span>
+              </button>
+          }
+
+          {/* Year buckets */}
+          {displayBuckets.map(bucket => {
+            const items = planItems.filter(p => p.year === bucket.value);
+            if (!items.length) return null;
+            return (
+              <div key={bucket.value} className="your-plan-bucket">
+                <div className="your-plan-bucket-label">
+                  {bucket.label}
+                  <span>{items.length} action{items.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="your-plan-items">
+                  {items.map(item => {
+                    const action = getAction(item.actionId);
+                    if (!action) return null;
+                    const theme = THEMES[action.theme];
+                    return (
+                      <div key={item.actionId} className="your-plan-item"
+                        style={{ background: theme.bg, borderLeftColor: theme.border }}>
+                        <div className="your-plan-item-text">
+                          <span className="your-plan-item-cat" style={{ color: theme.text }}>
+                            {action.theme}
+                          </span>
+                          <span className="your-plan-item-title" style={{ color: theme.text }}>
+                            {action.title}
+                          </span>
+                        </div>
+                        {bucket.value === 'ongoing' && (
+                          <span className="your-plan-item-ongoing" style={{ color: theme.text }}>↺</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {!hasContent && (
+            <p className="empty-state">Your plan is empty. Head to All Actions to add some.</p>
+          )}
+
+          <div className="your-plan-footer">🌿 Don't Panic · Plan for people, planet and local place</div>
+        </div>
+      );
+    }
+
+    const NAV_TABS = [
+      { id: 'yourPlan',   label: 'Your Plan',   icon: '📄' },
+      { id: 'myPlan',     label: 'Manage',      icon: '✏️' },
+      { id: 'allActions', label: 'All Actions', icon: '🗂️' },
+      { id: 'reminders',  label: 'Reminders',   icon: '🔔' },
+    ];
+
+    function Navigation({ activeTab, onTabChange }) {
+      return (
+        <nav className="bottom-nav">
+          {NAV_TABS.map(tab => (
+            <button key={tab.id}
+              className={`nav-tab${activeTab === tab.id ? ' nav-tab--active' : ''}`}
+              onClick={() => onTabChange(tab.id)}
+              aria-current={activeTab === tab.id ? 'page' : undefined}>
+              <span className="nav-icon">{tab.icon}</span>
+              <span className="nav-label">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+      );
+    }
+
+    // ── App ───────────────────────────────────────────────────────────────────
+
+    function App() {
+      const [user,           setUser]           = useState(() => loadUser());
+      const [planItems,      setPlanItems]      = useState(() => loadPlan());
+      const [activeTab,      setActiveTab]      = useState('yourPlan');
+      const [allActionsView, setAllActionsView] = useState(null); // null=hub | 'personal'|'community'|'political'|'all'
+      const [sheet,          setSheet]          = useState(null);
+      const [sprint,         setSprint]         = useState(() => loadSprint()); // null | { startDate: ISO }
+
+      function handleTabChange(tab) {
+        if (tab !== 'allActions') setAllActionsView(null);
+        setActiveTab(tab);
+      }
+
+      function handleOnboardingComplete(userData) {
+        const plan = buildInitialPlan(userData.lifeStage, userData.planType);
+        saveUser(userData); savePlan(plan);
+        setUser(userData); setPlanItems(plan);
+      }
+
+      function updatePlan(fn) {
+        setPlanItems(prev => { const next = fn(prev); savePlan(next); return next; });
+      }
+
+      const handleAddToYear = useCallback((actionId, year) => {
+        updatePlan(prev => [...prev.filter(p => p.actionId !== actionId), { actionId, year, addedAt: new Date().toISOString() }]);
+        setSheet(null);
+      }, []);
+
+      const handleMove = useCallback((actionId, year) => {
+        updatePlan(prev => prev.map(p => p.actionId === actionId ? { ...p, year } : p));
+        setSheet(null);
+      }, []);
+
+      const handleMarkDone = useCallback((actionId) => {
+        updatePlan(prev => prev.map(p => p.actionId === actionId ? { ...p, year: 'done' } : p));
+        if (user?.postcode) recordCommunityAction(actionId, user.postcode);
+        setSheet(null);
+      }, [user]);
+
+      const handleRemove = useCallback((actionId) => {
+        updatePlan(prev => prev.filter(p => p.actionId !== actionId));
+        setSheet(null);
+      }, []);
+
+      function startSprint() {
+        const now  = new Date().toISOString();
+        const data = { startDate: now };
+        setSprint(data);
+        saveSprint(data);
+        updatePlan(prev => {
+          const inPlan = new Set(prev.map(p => p.actionId));
+          const extras = SPRINT_PRELOAD_IDS
+            .filter(id => !inPlan.has(id))
+            .map(id => ({ actionId: id, year: 'sprint', addedAt: now }));
+          return [...prev, ...extras];
+        });
+      }
+
+      function endSprint() {
+        setSprint(null);
+        saveSprint(null);
+        updatePlan(prev => prev
+          // Remove sprint-specific preloaded actions; move any other sprint items back to this_year
+          .filter(p => !(p.year === 'sprint' && getAction(p.actionId)?.isSprint))
+          .map(p => p.year === 'sprint' ? { ...p, year: 'this_year' } : p)
+        );
+      }
+
+      function openSheet(actionId)  { setSheet({ actionId }); }
+      function closeSheet()         { setSheet(null); }
+
+      const sheetAction   = sheet ? getAction(sheet.actionId)                          : null;
+      const sheetPlanItem = sheet ? planItems.find(p => p.actionId === sheet.actionId) : null;
+
+      if (!user) return <Onboarding onComplete={handleOnboardingComplete} />;
+
+      return (
+        <div className="app">
+          <Header user={user} planItems={planItems} />
+          <main className="main-content">
+            {activeTab === 'yourPlan'  && <YourPlan user={user} planItems={planItems} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} />}
+            {activeTab === 'myPlan'    && <MyPlan planItems={planItems} onTapCard={openSheet} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} />}
+            {activeTab === 'allActions' && !allActionsView && (
+              <AllActionsHub onSelect={setAllActionsView} />
+            )}
+            {activeTab === 'allActions' && allActionsView && (
+              <AllActions
+                planItems={planItems}
+                onTapCard={openSheet}
+                typeFilter={allActionsView}
+                onBack={() => setAllActionsView(null)} />
+            )}
+            {activeTab === 'reminders' && (
+              <Reminders planItems={planItems}
+                onUpdatePlan={(id) => { openSheet(id); setActiveTab('yourPlan'); }} />
+            )}
+          </main>
+          <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
+          {sheet && (
+            <BottomSheet
+              action={sheetAction}
+              planItem={sheetPlanItem}
+              onAdd={(year)  => handleAddToYear(sheet.actionId, year)}
+              onMove={(year) => handleMove(sheet.actionId, year)}
+              onDone={()     => handleMarkDone(sheet.actionId)}
+              onRemove={()   => handleRemove(sheet.actionId)}
+              onClose={closeSheet}
+              sprintActive={!!sprint} />
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
