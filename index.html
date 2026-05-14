@@ -423,6 +423,44 @@
       border-top: 1px solid var(--border);
     }
 
+    /* ── Filter star chip ── */
+    .filter-chip--star { border-color: var(--green); color: var(--green-dark); background: var(--green-subtle); }
+    .filter-chip--star.filter-chip--active { background: var(--green); border-color: var(--green); color: #fff; }
+
+    /* ── Profile ── */
+    .profile-header {
+      text-align: center; padding: 28px 0 20px;
+      margin-bottom: 20px; border-bottom: 1px solid var(--border);
+    }
+    .profile-avatar { font-size: 44px; margin-bottom: 10px; }
+    .profile-stage-label { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+    .profile-location-label { font-size: 13px; color: var(--text-tertiary); }
+    .profile-form { display: flex; flex-direction: column; gap: 16px; }
+    .profile-saved-msg {
+      text-align: center; font-size: 14px; font-weight: 600;
+      color: var(--green-dark); background: var(--green-light);
+      padding: 10px; border-radius: var(--radius-sm);
+    }
+
+    /* ── Plan type picker ── */
+    .your-plan-subtitle--tap {
+      cursor: pointer; color: var(--green); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 3px;
+    }
+    .plan-type-row {
+      display: block; width: 100%; text-align: left;
+      padding: 14px 16px; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--surface);
+      color: var(--text-primary); font-size: 15px; font-weight: 500;
+      font-family: inherit; margin-bottom: 8px; cursor: pointer;
+      transition: all 0.12s; -webkit-tap-highlight-color: transparent;
+    }
+    .plan-type-row--active {
+      border-color: var(--green); background: var(--green-light);
+      color: var(--green-dark); font-weight: 600;
+    }
+    .plan-type-note { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5; }
+
     /* ── Sprint ── */
     .sprint-section {
       margin-bottom: 20px;
@@ -629,12 +667,6 @@
       { id: 'push-workplace-sustainability', title: 'Push for sustainability at your workplace', theme: 'money', actionType: 'political', cost: 1, impact: 4 },
       { id: 'talk-to-friends',     title: 'Talk to friends and family about climate action', theme: 'money', actionType: 'political', cost: 1, impact: 4 },
       { id: 'divest-campaign',     title: 'Support fossil fuel divestment campaigns', theme: 'money', actionType: 'political',  cost: 1, impact: 5 },
-      // ── Sprint actions (pre-loaded when a One Month Sprint is started) ────────
-      { id: 'sprint-buy-less',      title: 'Focus on buying less for a month',              theme: 'stuff',     actionType: 'personal', cost: 1, impact: 2, isSprint: true },
-      { id: 'sprint-walk-more',     title: 'Focus on trying to walk more for a month',      theme: 'transport', actionType: 'personal', cost: 1, impact: 2, isSprint: true },
-      { id: 'sprint-ride-bike',     title: 'Focus on planning to ride a bike for a month',  theme: 'transport', actionType: 'personal', cost: 1, impact: 2, isSprint: true },
-      { id: 'sprint-heating',       title: 'Focus on reducing the heating bill for a month', theme: 'energy',   actionType: 'personal', cost: 1, impact: 2, isSprint: true },
-      { id: 'sprint-local-veggies', title: 'Focus on buying local veggies for a month',     theme: 'food',      actionType: 'personal', cost: 1, impact: 2, isSprint: true },
     ];
 
     const LIFE_STAGES = [
@@ -946,7 +978,7 @@
       );
     }
 
-    const SPRINT_PRELOAD_IDS = ['sprint-buy-less','sprint-walk-more','sprint-ride-bike','sprint-heating','sprint-local-veggies'];
+    const SPRINT_PRELOAD_IDS = ['try-walking','try-riding-a-bike','try-catching-a-bus','try-not-buying','try-fixing','less-red-meat-try'];
 
     function sprintDaysLeft(sprint) {
       if (!sprint?.startDate) return 30;
@@ -1107,13 +1139,14 @@
 
     function AllActions({ planItems, onTapCard, typeFilter = 'all', onBack }) {
       const [themeFilter, setThemeFilter] = useState('All');
-      const [sort, setSort]               = useState('default');
+      const [sort, setSort]               = useState(null); // null=all | 'star'|'hchi'|'lcli'
       const inPlanIds    = new Set(planItems.map(p => p.actionId));
       const isMoneyView  = themeFilter === 'Money';
 
       const TYPE_LABELS = { personal: 'Personal', community: 'Community', political: 'Political', all: 'All' };
 
       let visible = ACTIONS.filter(a => {
+        if (a.isSprint) return false; // sprint-only actions don't show in library
         const typeMatch  = typeFilter === 'all' || a.actionType === typeFilter;
         const themeMatch = themeFilter === 'All'
           ? true
@@ -1122,11 +1155,13 @@
         return typeMatch && themeMatch;
       });
 
-      if (sort === 'low_cost')    visible = [...visible].sort((a, b) => a.cost - b.cost);
-      if (sort === 'high_impact') visible = [...visible].sort((a, b) => b.impact - a.impact);
+      // Quadrant filters: low=1-2, high=3-5
+      if (sort === 'star') visible = visible.filter(a => a.cost <= 2 && a.impact >= 3);
+      else if (sort === 'hchi') visible = visible.filter(a => a.cost >= 3 && a.impact >= 3);
+      else if (sort === 'lcli') visible = visible.filter(a => a.cost <= 2 && a.impact <= 2);
 
-      // In Money view: native money actions first, then cross-category grouped by theme
-      if (isMoneyView && sort === 'default') {
+      // In Money view: native money actions first, then cross-category
+      if (isMoneyView && !sort) {
         visible = [
           ...visible.filter(a => a.theme === 'money'),
           ...visible.filter(a => a.theme !== 'money'),
@@ -1147,10 +1182,17 @@
                 onClick={() => setThemeFilter(t)}>{t}</button>
             ))}
           </div>
-          <div className="filter-row">
-            {[{ v:'default',label:'Default' },{ v:'low_cost',label:'Low cost first' },{ v:'high_impact',label:'High impact first' }].map(s => (
-              <button key={s.v} className={`filter-chip${sort === s.v ? ' filter-chip--active' : ''}`}
-                onClick={() => setSort(s.v)}>{s.label}</button>
+          <div className="filter-row filter-row--scroll">
+            {[
+              { v: 'star', label: '⭐ Low cost, high impact', star: true },
+              { v: 'hchi', label: 'High cost, high impact' },
+              { v: 'lcli', label: 'Low cost, low impact' },
+            ].map(s => (
+              <button key={s.v}
+                className={`filter-chip${s.star ? ' filter-chip--star' : ''}${sort === s.v ? ' filter-chip--active' : ''}`}
+                onClick={() => setSort(sort === s.v ? null : s.v)}>
+                {s.label}
+              </button>
             ))}
           </div>
           <div className="card-grid card-grid--library">
@@ -1304,9 +1346,10 @@
 
     // ── Your Plan ─────────────────────────────────────────────────────────────
 
-    function YourPlan({ user, planItems, sprint, onStartSprint, onEndSprint }) {
+    function YourPlan({ user, planItems, sprint, onStartSprint, onEndSprint, onSwitchPlanType }) {
       const stageName   = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
       const planType    = PLAN_TYPES.find(t => t.value === user.planType)?.label ?? '';
+      const [planTypeSheet, setPlanTypeSheet] = useState(false);
       const done        = planItems.filter(p => p.year === 'done');
       const displayBuckets = [
         ...PLAN_YEAR_BUCKETS,
@@ -1379,6 +1422,9 @@
             <div>
               <div className="your-plan-title">Your plan</div>
               <div className="your-plan-subtitle">{stageName} · {user.suburb} {user.postcode}</div>
+              <button className="your-plan-subtitle your-plan-subtitle--tap" style={{marginTop:3,background:'none',border:'none',padding:0,fontFamily:'inherit',fontSize:13}} onClick={() => setPlanTypeSheet(true)}>
+                {planType || 'Standard'} ›
+              </button>
             </div>
             <div className="toolbar-btns">
               <button className="toolbar-btn" onClick={handleShare}>
@@ -1452,6 +1498,89 @@
           )}
 
           <div className="your-plan-footer">🌿 Don't Panic · Plan for people, planet and local place</div>
+
+          {/* Plan type switcher sheet */}
+          {planTypeSheet && (
+            <>
+              <div className="sheet-backdrop" onClick={() => setPlanTypeSheet(false)} />
+              <div className="sheet" role="dialog" aria-modal="true">
+                <div className="sheet-handle" />
+                <h2 className="sheet-heading">Switch plan type</h2>
+                <p className="plan-type-note">
+                  Switching adds that plan's suggested actions to your existing plan — nothing is removed and completed actions stay done.
+                </p>
+                {PLAN_TYPES.map(t => (
+                  <button key={t.value}
+                    className={`plan-type-row${user.planType === t.value ? ' plan-type-row--active' : ''}`}
+                    onClick={() => {
+                      if (t.value !== user.planType) onSwitchPlanType(t.value);
+                      setPlanTypeSheet(false);
+                    }}>
+                    {t.label}{user.planType === t.value ? '  ✓' : ''}
+                  </button>
+                ))}
+                <button className="sheet-cancel-btn" onClick={() => setPlanTypeSheet(false)}>Cancel</button>
+              </div>
+            </>
+          )}
+        </div>
+      );
+    }
+
+    function Profile({ user, onSave }) {
+      const [email,    setEmail]    = useState(user.email    || '');
+      const [suburb,   setSuburb]   = useState(user.suburb   || '');
+      const [postcode, setPostcode] = useState(user.postcode || '');
+      const [planType, setPlanType] = useState(user.planType || 'standard');
+      const [saved,    setSaved]    = useState(false);
+
+      const stageName = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
+
+      function handleSave() {
+        if (!email.trim() || !suburb.trim() || !postcode.trim()) return;
+        onSave({ ...user, email: email.trim(), suburb: suburb.trim(), postcode: postcode.trim(), planType });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
+
+      return (
+        <div className="screen">
+          <div className="profile-header">
+            <div className="profile-avatar">👤</div>
+            <div className="profile-stage-label">{stageName}</div>
+            <div className="profile-location-label">{user.suburb} {user.postcode}</div>
+          </div>
+          <div className="profile-form">
+            <div className="field">
+              <label htmlFor="pr-email">Email</label>
+              <input id="pr-email" type="email" value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com" autoComplete="email" inputMode="email" />
+            </div>
+            <div className="field">
+              <label htmlFor="pr-suburb">Suburb</label>
+              <input id="pr-suburb" type="text" value={suburb}
+                onChange={e => setSuburb(e.target.value)} placeholder="e.g. Fitzroy" />
+            </div>
+            <div className="field">
+              <label htmlFor="pr-postcode">Postcode</label>
+              <input id="pr-postcode" type="text" value={postcode}
+                onChange={e => setPostcode(e.target.value)}
+                placeholder="e.g. 3065" inputMode="numeric" maxLength={10} />
+            </div>
+            <div className="field">
+              <label htmlFor="pr-plan">Plan type</label>
+              <div className="select-wrap">
+                <select id="pr-plan" value={planType} onChange={e => setPlanType(e.target.value)}>
+                  {PLAN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+            </div>
+            {saved
+              ? <div className="profile-saved-msg">✓ Changes saved</div>
+              : <button className="btn-primary btn-full" onClick={handleSave}>Save changes</button>
+            }
+          </div>
         </div>
       );
     }
@@ -1461,6 +1590,7 @@
       { id: 'myPlan',     label: 'Manage',      icon: '✏️' },
       { id: 'allActions', label: 'All Actions', icon: '🗂️' },
       { id: 'reminders',  label: 'Reminders',   icon: '🔔' },
+      { id: 'profile',    label: 'Profile',     icon: '👤' },
     ];
 
     function Navigation({ activeTab, onTabChange }) {
@@ -1542,11 +1672,24 @@
       function endSprint() {
         setSprint(null);
         saveSprint(null);
-        updatePlan(prev => prev
-          // Remove sprint-specific preloaded actions; move any other sprint items back to this_year
-          .filter(p => !(p.year === 'sprint' && getAction(p.actionId)?.isSprint))
-          .map(p => p.year === 'sprint' ? { ...p, year: 'this_year' } : p)
-        );
+        updatePlan(prev => prev.map(p => p.year === 'sprint' ? { ...p, year: 'this_year' } : p));
+      }
+
+      function handleSaveProfile(updatedUser) {
+        saveUser(updatedUser);
+        setUser(updatedUser);
+      }
+
+      function handleSwitchPlanType(newPlanType) {
+        const newItems  = buildInitialPlan(user.lifeStage, newPlanType);
+        updatePlan(prev => {
+          const existing = new Set(prev.map(p => p.actionId));
+          const toAdd    = newItems.filter(p => !existing.has(p.actionId));
+          return [...prev, ...toAdd];
+        });
+        const updatedUser = { ...user, planType: newPlanType };
+        saveUser(updatedUser);
+        setUser(updatedUser);
       }
 
       function openSheet(actionId)  { setSheet({ actionId }); }
@@ -1561,7 +1704,8 @@
         <div className="app">
           <Header user={user} planItems={planItems} />
           <main className="main-content">
-            {activeTab === 'yourPlan'  && <YourPlan user={user} planItems={planItems} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} />}
+            {activeTab === 'yourPlan'  && <YourPlan user={user} planItems={planItems} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} onSwitchPlanType={handleSwitchPlanType} />}
+            {activeTab === 'profile'   && <Profile user={user} onSave={handleSaveProfile} />}
             {activeTab === 'myPlan'    && <MyPlan planItems={planItems} onTapCard={openSheet} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} />}
             {activeTab === 'allActions' && !allActionsView && (
               <AllActionsHub onSelect={setAllActionsView} />
