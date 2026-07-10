@@ -6,7 +6,22 @@
       "Bash(git commit *)",
       "Bash(git config *)",
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npx serve *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where python *)",
+      "Bash(where python3 *)",
+      "Bash(where node *)",
+      "Bash(where py *)",
+      "Bash(where python3.exe)",
+      "Read(//c//**)",
+      "Read(//c/Program Files/**)",
+      "Bash(node -e ' *)",
+      "Bash(which node *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Program Files\",\"C:\\\\Program Files \\(x86\\)\",\"$env:LOCALAPPDATA\",\"$env:APPDATA\" -Filter \"node.exe\" -Recurse -ErrorAction SilentlyContinue -Depth 3 | Select-Object -First 5 FullName)",
+      "Bash(awk 'NR==567,NR==755' index.html)",
+      "Bash(git --version)",
+      "Bash(cd \"/c/Users/annla/OneDrive/Documents/Dont panic\" && \\\\ *)"
     ]
   }
 }
