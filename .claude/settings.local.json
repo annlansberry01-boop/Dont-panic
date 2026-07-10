@@ -21,7 +21,9 @@
       "PowerShell(Get-ChildItem -Path \"C:\\\\Program Files\",\"C:\\\\Program Files \\(x86\\)\",\"$env:LOCALAPPDATA\",\"$env:APPDATA\" -Filter \"node.exe\" -Recurse -ErrorAction SilentlyContinue -Depth 3 | Select-Object -First 5 FullName)",
       "Bash(awk 'NR==567,NR==755' index.html)",
       "Bash(git --version)",
-      "Bash(cd \"/c/Users/annla/OneDrive/Documents/Dont panic\" && \\\\ *)"
+      "Bash(cd \"/c/Users/annla/OneDrive/Documents/Dont panic\" && \\\\ *)",
+      "WebFetch(domain:jovial-semolina-6babd6.netlify.app)",
+      "mcp__claude-in-chrome__navigate"
     ]
   }
 }
