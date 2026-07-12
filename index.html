@@ -142,6 +142,18 @@
     .action-card--library { min-height: 80px; }
     .action-card--done { background: #F5F5F4 !important; border-color: #DDD !important; }
     .action-card--in-plan { box-shadow: 0 0 0 2px var(--green); }
+    .action-card--dragging { opacity: 0.6; transform: scale(1.03); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+    .drag-ghost {
+      position: fixed; top: 0; left: 0; z-index: 50;
+      pointer-events: none; transform: translate(-50%, -50%);
+      width: 152px;
+    }
+    .drag-ghost-card { opacity: 0.95; box-shadow: 0 8px 20px rgba(0,0,0,0.25); transform: scale(1.05); }
+    .bucket--drop-active {
+      background: rgba(29,158,117,0.15);
+      border: 2px solid #1D9E75;
+      border-radius: var(--radius-sm);
+    }
     .card-theme-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
     .card-money-tag { font-weight: 800; opacity: 1; letter-spacing: 0.2px; }
     .card-ongoing-badge {
@@ -551,7 +563,7 @@
   <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
 
   <script type="text/babel">
-    const { useState, useCallback, useEffect } = React;
+    const { useState, useCallback, useEffect, useRef } = React;
 
     // ── Data ─────────────────────────────────────────────────────────────────
 
@@ -1046,12 +1058,28 @@
       );
     }
 
-    function ActionCardPlan({ planItem, onTap }) {
+    function ActionCardPlan({ planItem, onTap, dragging, onPressStart, onPressEnd }) {
       const action    = getAction(planItem.actionId);
       if (!action) return null;
       const isDone    = planItem.year === 'done';
       const isOngoing = planItem.year === 'ongoing';
       const theme     = THEMES[action.theme];
+      const draggable = !!onPressStart;
+
+      function handleMouseDown(e) {
+        if (!draggable) return;
+        onPressStart(planItem.actionId, e.clientX, e.clientY, false);
+      }
+      function handleTouchStart(e) {
+        if (!draggable) return;
+        const t = e.touches[0];
+        onPressStart(planItem.actionId, t.clientX, t.clientY, true);
+      }
+      function handlePressEnd() {
+        if (!draggable) return;
+        onPressEnd && onPressEnd();
+      }
+
       if (isDone) {
         return (
           <div className="action-card action-card--done" onClick={() => onTap(planItem.actionId)}>
@@ -1061,9 +1089,14 @@
         );
       }
       return (
-        <div className="action-card"
+        <div className={`action-card${dragging ? ' action-card--dragging' : ''}`}
           style={{ background: theme.bg, borderColor: theme.border }}
-          onClick={() => onTap(planItem.actionId)}>
+          onClick={() => onTap(planItem.actionId)}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handlePressEnd}
+          onMouseLeave={handlePressEnd}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handlePressEnd}>
           <span className="card-theme-label" style={{ color: theme.text }}>{action.theme}</span>
           <span className="card-title" style={{ color: theme.text }}>{action.title}</span>
           {isOngoing && (
@@ -1146,11 +1179,144 @@
       );
     }
 
-    function MyPlan({ planItems, onTapCard, sprint, onStartSprint, onEndSprint }) {
+    function MyPlan({ user, planItems, onTapCard, onMove, sprint, onStartSprint, onEndSprint }) {
       const done    = planItems.filter(p => p.year === 'done');
       const ongoing = planItems.filter(p => p.year === 'ongoing');
+
+      const stageName = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
+      const planType  = PLAN_TYPES.find(t => t.value === user.planType)?.label ?? '';
+
+      // ── Drag to move between year buckets ──────────────────────────────────
+      const [draggingId, setDraggingId] = useState(null);
+      const [overYear,   setOverYear]   = useState(null);
+      const dragRef  = useRef({ actionId: null, holdTimer: null, dragging: false, overYear: null });
+      const ghostRef = useRef(null);
+
+      function moveGhost(x, y) {
+        if (ghostRef.current) {
+          ghostRef.current.style.left = x + 'px';
+          ghostRef.current.style.top  = y + 'px';
+        }
+      }
+
+      function findYearAt(x, y) {
+        const el   = document.elementFromPoint(x, y);
+        const zone = el && el.closest ? el.closest('[data-drop-year]') : null;
+        return zone ? zone.getAttribute('data-drop-year') : null;
+      }
+
+      function clearHoldTimer() {
+        if (dragRef.current.holdTimer) { clearTimeout(dragRef.current.holdTimer); dragRef.current.holdTimer = null; }
+      }
+
+      function handleMouseMove(e) {
+        if (!dragRef.current.dragging) return;
+        moveGhost(e.clientX, e.clientY);
+        const year = findYearAt(e.clientX, e.clientY);
+        if (year !== dragRef.current.overYear) { dragRef.current.overYear = year; setOverYear(year); }
+      }
+      function handleTouchMove(e) {
+        if (!dragRef.current.dragging) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        moveGhost(t.clientX, t.clientY);
+        const year = findYearAt(t.clientX, t.clientY);
+        if (year !== dragRef.current.overYear) { dragRef.current.overYear = year; setOverYear(year); }
+      }
+
+      function endDrag() {
+        clearHoldTimer();
+        if (dragRef.current.dragging && dragRef.current.overYear && dragRef.current.actionId) {
+          onMove(dragRef.current.actionId, dragRef.current.overYear);
+        }
+        dragRef.current.dragging = false;
+        dragRef.current.actionId = null;
+        dragRef.current.overYear = null;
+        setDraggingId(null);
+        setOverYear(null);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', endDrag);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', endDrag);
+      }
+
+      function handlePressStart(actionId, x, y, isTouch) {
+        clearHoldTimer();
+        dragRef.current.holdTimer = setTimeout(() => {
+          dragRef.current.dragging = true;
+          dragRef.current.actionId = actionId;
+          setDraggingId(actionId);
+          moveGhost(x, y);
+          if (isTouch) {
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
+            document.addEventListener('touchend', endDrag);
+          } else {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', endDrag);
+          }
+        }, 300);
+      }
+
+      function handlePressEnd() {
+        clearHoldTimer();
+      }
+
+      function buildShareText() {
+        let out = `My Don't Panic Action Plan\n`;
+        out += `${user.email} · ${user.suburb} ${user.postcode}\n`;
+        out += `${stageName}${planType ? ' · ' + planType : ''}\n\n`;
+        const sprintItems = planItems.filter(p => p.year === 'sprint');
+        if (sprintItems.length) {
+          out += `⚡ ONE MONTH SPRINT\n`;
+          sprintItems.forEach(item => { const a = getAction(item.actionId); if (a) out += `• ${a.title}\n`; });
+          out += '\n';
+        }
+        for (const b of [...PLAN_YEAR_BUCKETS, { value: 'ongoing', label: 'Ongoing' }]) {
+          const items = planItems.filter(p => p.year === b.value);
+          if (!items.length) continue;
+          out += `${b.label.toUpperCase()}\n`;
+          items.forEach(item => {
+            const a = getAction(item.actionId);
+            if (a) out += `• ${a.title}\n`;
+          });
+          out += '\n';
+        }
+        if (done.length) {
+          out += `DONE ✓\n`;
+          done.forEach(item => {
+            const a = getAction(item.actionId);
+            if (a) out += `• ${a.title}\n`;
+          });
+          out += '\n';
+        }
+        out += `Generated with Don't Panic`;
+        return out;
+      }
+
+      async function handleShare() {
+        const text = buildShareText();
+        if (navigator.share) {
+          try { await navigator.share({ title: "My Don't Panic Action Plan", text }); }
+          catch (_) {}
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(text);
+          alert('Plan copied to clipboard!');
+        }
+      }
+
       return (
         <div className="screen">
+          <div className="your-plan-toolbar">
+            <div>
+              <div className="your-plan-title">Your plan</div>
+              <div className="your-plan-subtitle">{stageName} · {user.suburb} {user.postcode}</div>
+            </div>
+            <div className="toolbar-btns">
+              <button className="toolbar-btn" onClick={handleShare}>
+                <span>↑</span> Share
+              </button>
+            </div>
+          </div>
           {/* Sprint section — shown at top when active */}
           {sprint
             ? <SprintCards planItems={planItems} onTapCard={onTapCard} sprint={sprint} onEnd={onEndSprint} />
@@ -1180,18 +1346,24 @@
               const specific = planItems.filter(p => p.year === bucket.value);
               const all      = [...specific, ...ongoing];
               if (all.length === 0) return null;
+              const isDropActive = overYear === bucket.value;
               return (
                 <div key={bucket.value} className="bucket">
                   <div className="bucket-header">
                     <span className="bucket-title">{bucket.label}</span>
                     <span className="bucket-count">{all.length}</span>
                   </div>
-                  <div className="card-grid">
+                  <div className={`card-grid${isDropActive ? ' bucket--drop-active' : ''}`}
+                    data-drop-year={bucket.value}>
                     {specific.map(item => (
-                      <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard} />
+                      <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard}
+                        dragging={draggingId === item.actionId}
+                        onPressStart={handlePressStart} onPressEnd={handlePressEnd} />
                     ))}
                     {ongoing.map(item => (
-                      <ActionCardPlan key={`${bucket.value}-${item.actionId}`} planItem={item} onTap={onTapCard} />
+                      <ActionCardPlan key={`${bucket.value}-${item.actionId}`} planItem={item} onTap={onTapCard}
+                        dragging={draggingId === item.actionId}
+                        onPressStart={handlePressStart} onPressEnd={handlePressEnd} />
                     ))}
                   </div>
                 </div>
@@ -1201,6 +1373,19 @@
               <p className="empty-state">Your plan is empty. Head to All Actions to add some.</p>
             )}
           </section>
+          {draggingId && (() => {
+            const ghostAction = getAction(draggingId);
+            if (!ghostAction) return null;
+            const ghostTheme = THEMES[ghostAction.theme];
+            return (
+              <div ref={ghostRef} className="drag-ghost">
+                <div className="action-card drag-ghost-card" style={{ background: ghostTheme.bg, borderColor: ghostTheme.border }}>
+                  <span className="card-theme-label" style={{ color: ghostTheme.text }}>{ghostAction.theme}</span>
+                  <span className="card-title" style={{ color: ghostTheme.text }}>{ghostAction.title}</span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       );
     }
@@ -1439,189 +1624,6 @@
       );
     }
 
-    // ── Your Plan ─────────────────────────────────────────────────────────────
-
-    function YourPlan({ user, planItems, sprint, onStartSprint, onEndSprint, onSwitchPlanType }) {
-      const stageName   = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
-      const planType    = PLAN_TYPES.find(t => t.value === user.planType)?.label ?? '';
-      const [planTypeSheet, setPlanTypeSheet] = useState(false);
-      const done        = planItems.filter(p => p.year === 'done');
-      const displayBuckets = [
-        ...PLAN_YEAR_BUCKETS,
-        { value: 'ongoing', label: 'Ongoing' },
-      ];
-
-      function buildShareText() {
-        let out = `My Don't Panic Action Plan\n`;
-        out += `${user.email} · ${user.suburb} ${user.postcode}\n`;
-        out += `${stageName}${planType ? ' · ' + planType : ''}\n\n`;
-        // Sprint items first
-        const sprintItems = planItems.filter(p => p.year === 'sprint');
-        if (sprintItems.length) {
-          out += `⚡ ONE MONTH SPRINT\n`;
-          sprintItems.forEach(item => { const a = getAction(item.actionId); if (a) out += `• ${a.title}\n`; });
-          out += '\n';
-        }
-        for (const b of displayBuckets) {
-          const items = planItems.filter(p => p.year === b.value);
-          if (!items.length) continue;
-          out += `${b.label.toUpperCase()}\n`;
-          items.forEach(item => {
-            const a = getAction(item.actionId);
-            if (a) out += `• ${a.title}\n`;
-          });
-          out += '\n';
-        }
-        if (done.length) {
-          out += `DONE ✓\n`;
-          done.forEach(item => {
-            const a = getAction(item.actionId);
-            if (a) out += `• ${a.title}\n`;
-          });
-          out += '\n';
-        }
-        out += `Generated with Don't Panic`;
-        return out;
-      }
-
-      async function handleShare() {
-        const text = buildShareText();
-        if (navigator.share) {
-          try { await navigator.share({ title: "My Don't Panic Action Plan", text }); }
-          catch (_) {}
-        } else if (navigator.clipboard) {
-          await navigator.clipboard.writeText(text);
-          alert('Plan copied to clipboard!');
-        }
-      }
-
-      function handlePrint() { window.print(); }
-
-      const hasContent = planItems.filter(p => p.year !== 'done').length > 0;
-
-      return (
-        <div className="your-plan-screen">
-
-          {/* Print-only header */}
-          <div className="print-only print-header">
-            <div>
-              <div className="print-logo">🌿 Don't Panic</div>
-              <div className="print-user">{user.email} · {user.suburb} {user.postcode}</div>
-              <div className="print-meta">{stageName}{planType ? ' · ' + planType : ''}</div>
-            </div>
-            <div className="print-date">Printed {new Date().toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric' })}</div>
-          </div>
-
-          {/* Toolbar */}
-          <div className="your-plan-toolbar">
-            <div>
-              <div className="your-plan-title">Your plan</div>
-              <div className="your-plan-subtitle">{stageName} · {user.suburb} {user.postcode}</div>
-              <button className="your-plan-subtitle your-plan-subtitle--tap" style={{marginTop:3,background:'none',border:'none',padding:0,fontFamily:'inherit',fontSize:13}} onClick={() => setPlanTypeSheet(true)}>
-                {planType || 'Standard'} ›
-              </button>
-            </div>
-            <div className="toolbar-btns">
-              <button className="toolbar-btn" onClick={handleShare}>
-                <span>↑</span> Share
-              </button>
-              <button className="toolbar-btn toolbar-btn--primary" onClick={handlePrint}>
-                <span>⎙</span> Print
-              </button>
-            </div>
-          </div>
-
-          {/* Wins */}
-          {done.length > 0 && (
-            <div className="your-plan-wins">
-              ✓ {done.length} action{done.length !== 1 ? 's' : ''} completed — nice work!
-            </div>
-          )}
-
-          {/* Sprint */}
-          {sprint
-            ? <SprintList planItems={planItems} sprint={sprint} onEnd={onEndSprint} />
-            : <button className="sprint-cta" onClick={onStartSprint}>
-                <span className="sprint-cta-icon">⚡</span>
-                <div className="sprint-cta-body">
-                  <div className="sprint-cta-title">Start a One Month Sprint</div>
-                  <div className="sprint-cta-desc">Focus on a handful of actions intensely for 30 days.</div>
-                </div>
-                <span className="sprint-cta-arrow">›</span>
-              </button>
-          }
-
-          {/* Year buckets */}
-          {displayBuckets.map(bucket => {
-            const items = planItems.filter(p => p.year === bucket.value);
-            if (!items.length) return null;
-            return (
-              <div key={bucket.value} className="your-plan-bucket">
-                <div className="your-plan-bucket-label">
-                  {bucket.label}
-                  <span>{items.length} action{items.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="your-plan-items">
-                  {items.map(item => {
-                    const action = getAction(item.actionId);
-                    if (!action) return null;
-                    const theme = THEMES[action.theme];
-                    return (
-                      <div key={item.actionId} className="your-plan-item"
-                        style={{ background: theme.bg, borderLeftColor: theme.border }}>
-                        <div className="your-plan-item-text">
-                          <span className="your-plan-item-cat" style={{ color: theme.text }}>
-                            {action.theme}
-                          </span>
-                          <span className="your-plan-item-title" style={{ color: theme.text }}>
-                            {action.title}
-                          </span>
-                        </div>
-                        {bucket.value === 'ongoing' && (
-                          <span className="your-plan-item-ongoing" style={{ color: theme.text }}>↺</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-
-          {!hasContent && (
-            <p className="empty-state">Your plan is empty. Head to All Actions to add some.</p>
-          )}
-
-          <div className="your-plan-footer">🌿 Don't Panic · Plan for people, planet and local place</div>
-
-          {/* Plan type switcher sheet */}
-          {planTypeSheet && (
-            <>
-              <div className="sheet-backdrop" onClick={() => setPlanTypeSheet(false)} />
-              <div className="sheet" role="dialog" aria-modal="true">
-                <div className="sheet-handle" />
-                <h2 className="sheet-heading">Switch plan type</h2>
-                <p className="plan-type-note">
-                  Switching adds that plan's suggested actions to your existing plan — nothing is removed and completed actions stay done.
-                </p>
-                {PLAN_TYPES.map(t => (
-                  <button key={t.value}
-                    className={`plan-type-row${user.planType === t.value ? ' plan-type-row--active' : ''}`}
-                    onClick={() => {
-                      if (t.value !== user.planType) onSwitchPlanType(t.value);
-                      setPlanTypeSheet(false);
-                    }}>
-                    {t.label}{user.planType === t.value ? '  ✓' : ''}
-                  </button>
-                ))}
-                <button className="sheet-cancel-btn" onClick={() => setPlanTypeSheet(false)}>Cancel</button>
-              </div>
-            </>
-          )}
-        </div>
-      );
-    }
-
     function Profile({ user, onSave }) {
       const [email,    setEmail]    = useState(user.email    || '');
       const [suburb,   setSuburb]   = useState(user.suburb   || '');
@@ -1681,7 +1683,6 @@
     }
 
     const NAV_TABS = [
-      { id: 'yourPlan',   label: 'Your Plan',   icon: '📄' },
       { id: 'myPlan',     label: 'Manage',      icon: '✏️' },
       { id: 'allActions', label: 'All Actions', icon: '🗂️' },
       { id: 'reminders',  label: 'Reminders',   icon: '🔔' },
@@ -1709,7 +1710,7 @@
     function App() {
       const [user,           setUser]           = useState(() => loadUser());
       const [planItems,      setPlanItems]      = useState(() => loadPlan());
-      const [activeTab,      setActiveTab]      = useState('yourPlan');
+      const [activeTab,      setActiveTab]      = useState('myPlan');
       const [allActionsView, setAllActionsView] = useState(null); // null=hub | 'personal'|'community'|'political'|'all'
       const [sheet,          setSheet]          = useState(null);
       const [sprint,         setSprint]         = useState(() => loadSprint()); // null | { startDate: ISO }
@@ -1799,9 +1800,8 @@
         <div className="app">
           <Header user={user} planItems={planItems} />
           <main className="main-content">
-            {activeTab === 'yourPlan'  && <YourPlan user={user} planItems={planItems} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} onSwitchPlanType={handleSwitchPlanType} />}
             {activeTab === 'profile'   && <Profile user={user} onSave={handleSaveProfile} />}
-            {activeTab === 'myPlan'    && <MyPlan planItems={planItems} onTapCard={openSheet} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} />}
+            {activeTab === 'myPlan'    && <MyPlan user={user} planItems={planItems} onTapCard={openSheet} onMove={handleMove} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} />}
             {activeTab === 'allActions' && !allActionsView && (
               <AllActionsHub onSelect={setAllActionsView} />
             )}
@@ -1814,7 +1814,7 @@
             )}
             {activeTab === 'reminders' && (
               <Reminders planItems={planItems}
-                onUpdatePlan={(id) => { openSheet(id); setActiveTab('yourPlan'); }} />
+                onUpdatePlan={(id) => { openSheet(id); setActiveTab('myPlan'); }} />
             )}
           </main>
           <Navigation activeTab={activeTab} onTabChange={handleTabChange} />

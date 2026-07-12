@@ -1,5 +1,21 @@
 # Changelog
 
+## 10 July 2026 — Remove Your Plan screen, add Share to Manage, drag-and-drop
+
+Three changes to `index.html`, done in one session per Ian's request:
+
+1. **Removed the "Your Plan" tab/screen entirely.** The app now lands on "Manage" (the editable plan view, `activeTab` default changed from `'yourPlan'` to `'myPlan'`) instead of the old static summary screen. The `YourPlan` component, its nav entry, and all references were deleted.
+2. **Added a Share button to Manage.** Migrated the existing `buildShareText()`/`handleShare()` logic (Web Share API with clipboard-copy fallback) from the deleted `YourPlan` component into `MyPlan`, with a matching toolbar at the top of the screen. Print was not carried over (wasn't requested).
+3. **Implemented drag-and-drop** so action cards can be dragged between year buckets in Manage: press-and-hold for 300ms (so normal taps still open the bottom sheet), a ghost card follows the pointer/finger, year buckets highlight as drop zones, drop commits the move via the existing `handleMove`. Built with native mouse/touch events directly in `index.html` (no libraries) since the drag-and-drop prompt on file (`prompt-02-drag-to-move.md`) targeted a separate, stale Vite project (`src/`) that isn't the live codebase — that prompt is now superseded.
+
+Also confirmed via a live fetch of the Netlify site that `index.html` (repo root) is the actual deployed source — an earlier note pointing at a `.claude/worktrees/...` copy was wrong; that worktree has a broken git reference and is not connected to the live app.
+
+**Process note:** hit and recovered from a real bug during this work — the bash tool's view of files in this OneDrive-synced folder can lag significantly behind the Edit tool's (potentially minutes). A `sed` line-delete run through bash used stale line numbers and deleted the wrong content, breaking the file. Recovered using `git show HEAD:index.html` as a reference and the Edit tool to patch it back. Full detail and the safe-editing rule going forward are in `session-memory.md`.
+
+Known side effect: `handleSwitchPlanType` (the "switch plan type" feature, e.g. Standard → Quick Wins) had no UI outside the deleted Your Plan screen, so it's currently unreachable dead code. Flag to Ian — may need a new home (e.g. Profile) if that feature should stay.
+
+---
+
 ## 10 July 2026 — Cost/impact scoring corrections
 
 Rendered the book's PDF table pages (2 Jul 2026 final version) as images to read the colour-coded cost/impact quadrants directly, replacing earlier guesswork-based scores that were assigned without seeing the colours. Corrected 32 actions across 6 chapters in both `prompts/actions-corrected.js` and `index.html`.

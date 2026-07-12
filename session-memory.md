@@ -7,24 +7,50 @@ Ann is building two companion apps to *Don't Panic*, a practical sustainability 
 
 ---
 
+## CRITICAL: OneDrive sync lag between bash and file tools
+
+Discovered 10 Jul 2026: the `mcp__workspace__bash` tool sees a **stale, laggy view** of files under the OneDrive-synced "Dont panic" folder — potentially minutes behind. The Read/Edit/Write/Grep/Glob tools are instant and authoritative.
+
+**Rule: never use bash (sed, cat >, cp, etc.) to write to any file in this folder.** A `sed -i` line-range delete on `index.html` used bash's stale line numbers and silently deleted the wrong ~130 lines (cut off the entire end of the `App()` function, including `root.render`), even though the Edit tool's own view of the file was correct at the time. It was NOT caught until a Babel syntax check on a bash-read copy failed.
+
+**Safe pattern going forward:**
+- All edits to files in this folder: use the **Edit tool only**. Never bash/sed/cp for writes.
+- All verification/syntax checks: use **Read and Grep tools**, not bash `cat`/`wc`/`node --check`. If you must check syntax with a real JS parser (Babel), copy the file to the **outputs folder** first via `cp` (read-only from OneDrive side is fine — bash CAN read, just don't trust it as fresh), but even then re-verify critical sections with Read afterward since the copy itself may be stale.
+- If bash absolutely must touch this folder, treat its view as unreliable and re-confirm anything important via Read/Grep before acting on it.
+- Recovery when this bites you: the repo is git-tracked (`master`, tracks `origin/master`). `git show HEAD:<file>` gives a clean reference copy — but writing it back must go through Write/Edit, not `git checkout` (that also failed with "Operation not permitted: unlink" from bash on this mount).
+
+---
+
 ## App 1: Don't Panic Planner
 
 Live Netlify URL: `jovial-semolina-6babd6.netlify.app`
-Source file: `C:\Users\annla\OneDrive\Documents\Dont panic\.claude\worktrees\flamboyant-volhard-6173a3\index.html`
-Actions data (source of truth): `C:\Users\annla\OneDrive\Documents\Dont panic\prompts\actions-corrected.js`
+**Source file: `C:\Users\annla\OneDrive\Documents\Dont panic\index.html`** (the repo root file — confirmed 10 Jul 2026 by fetching the live Netlify URL and matching meta tags, plus `git status` showing this file on `master`, up to date with `origin/master`).
+
+**Correction:** the `.claude\worktrees\flamboyant-volhard-6173a3\index.html` path mentioned in earlier notes is NOT the live source. It's a stale worktree with a broken git reference (points to a Windows path that doesn't resolve from a Linux session) and a completely different/older app version. Don't edit it, don't treat it as truth.
+
+Also note: `src/` (App.jsx, components/*.jsx, a proper Vite project) is **also stale/unused** — its git history is corrupted and it's not what's deployed. All real work happens in the single-file `index.html`.
+
+Actions data (source of truth for the raw data, mirrored into `index.html`'s inline ACTIONS array): `C:\Users\annla\OneDrive\Documents\Dont panic\prompts\actions-corrected.js`
 
 ### Action data structure
-- 190 actions: 108 personal, 60 community, 23 political
+- 191 actions: 108 personal, 60 community, 23 political (the "190" in older notes was a stale comment in the file, off by one — not a data bug)
 - `actionType`: personal / community / political
 - `theme`: transport, energy, stuff, nature, food, money
 - `cost` and `impact`: 1 (low) → 5 (high)
 - `moneyAngle`: 'save' or 'invest' (cross-listed actions)
 - `altTheme`: secondary theme for money-primary actions
 
-### Pending Claude Code prompts
-- `prompt-04-dual-category-filter.md` — adds `altTheme` to 18 money actions + one-line filter change. **Ready to run.**
-- `prompt-05-fix-energy-scores.md` — **DO NOT RUN. Contains wrong scores. Delete this.**
-- `prompt-02-drag-to-move.md` — drag-to-move feature. Written, not yet run.
+### App structure (as of 10 Jul 2026)
+- Nav tabs: Manage (`myPlan`, the editable/draggable plan — now the **default landing tab**), All Actions, Reminders, Profile.
+- The old "Your Plan" tab/screen (static summary with Share+Print) has been **removed entirely** per Ian's request. Its Share logic (`buildShareText`/`handleShare`) was migrated into `MyPlan` — Manage now has its own Share button (Web Share API, falls back to clipboard copy). Print was dropped (wasn't requested); if it's wanted back later it'll need a new home since the only Print button lived on the deleted screen.
+- Drag-and-drop implemented directly in `MyPlan`/`ActionCardPlan` in `index.html` (native touch+mouse events, 300ms hold delay, ghost card follows pointer, year-bucket sections highlight as drop zones via `data-drop-year` attribute). This works differently from `prompt-02-drag-to-move.md`'s original design (which targeted the stale `src/App.jsx`/`MyPlan.jsx` files) — that prompt is now superseded/obsolete, kept for reference only.
+- Known minor dead code from the Your Plan removal (harmless, not cleaned up): `handleSwitchPlanType` in `App()` is now unused (plan-type switching UI had no other home — flag to Ian if that feature should live somewhere else, e.g. Profile). `SprintList` component (list-style sprint view) is also now unused since only `YourPlan` rendered it; `SprintCards` (grid-style, used in Manage) is unaffected.
+
+### Prompts folder status
+- `prompt-04-dual-category-filter.md` — **already run**, confirmed applied in `index.html` (filter logic + all 18 `altTheme` tags present).
+- `prompt-05-fix-energy-scores.md` — **DO NOT RUN. Contains wrong scores.** Still not deleted — do it next time.
+- `prompt-02-drag-to-move.md` — **superseded.** Drag-and-drop is implemented (see above), but not via this prompt since it targeted the wrong file structure. Prompt left in place for reference/history only.
+- `prompt-06-fix-cost-impact-scores.md` — the scoring corrections prompt, already applied to both `index.html` and `actions-corrected.js`, kept for reproducibility on a fresh checkout.
 
 ---
 
