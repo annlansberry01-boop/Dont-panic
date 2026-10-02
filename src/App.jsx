@@ -1,14 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Onboarding     from './components/Onboarding.jsx';
-import Header         from './components/Header.jsx';
+import StatusLine     from './components/StatusLine.jsx';
 import MyPlan         from './components/MyPlan.jsx';
 import AllActionsHub  from './components/AllActionsHub.jsx';
 import AllActions     from './components/AllActions.jsx';
-import Reminders      from './components/Reminders.jsx';
-import BottomSheet    from './components/BottomSheet.jsx';
 import Profile        from './components/Profile.jsx';
 import Navigation     from './components/Navigation.jsx';
-import { getAction } from './data/actions.js';
 import { buildInitialPlan, SPRINT_PRELOAD_IDS } from './data/templates.js';
 import { loadUser, loadPlan, saveUser, savePlan, loadSprint, saveSprint } from './storage.js';
 
@@ -19,6 +16,23 @@ export default function App() {
   const [allActionsView, setAllActionsView] = useState(null); // null=hub | 'personal'|'community'|'political'|'all'
   const [sheet,          setSheet]          = useState(null);
   const [sprint,         setSprint]         = useState(() => loadSprint()); // null | { startDate: ISO }
+
+  // Tell the parent page (when embedded in an iframe) how tall the content is,
+  // so it can resize the iframe instead of the app scrolling internally.
+  useEffect(() => {
+    let lastHeight = 0;
+    function report() {
+      const height = document.body.scrollHeight;
+      if (height !== lastHeight) {
+        lastHeight = height;
+        window.parent.postMessage({ type: 'dont-panic-height', height }, '*');
+      }
+    }
+    const observer = new ResizeObserver(report);
+    observer.observe(document.body);
+    report();
+    return () => observer.disconnect();
+  }, []);
 
   function handleTabChange(tab) {
     if (tab !== 'allActions') setAllActionsView(null);
@@ -83,17 +97,22 @@ export default function App() {
   function openSheet(actionId)  { setSheet({ actionId }); }
   function closeSheet()         { setSheet(null); }
 
-  const sheetAction   = sheet ? getAction(sheet.actionId)                          : null;
-  const sheetPlanItem = sheet ? planItems.find(p => p.actionId === sheet.actionId) : null;
-
   if (!user) return <Onboarding onComplete={handleOnboardingComplete} />;
+
+  const openActionId = sheet?.actionId ?? null;
 
   return (
     <div className="app">
-      <Header user={user} planItems={planItems} />
+      <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
+      <StatusLine user={user} planItems={planItems} />
       <main className="main-content">
         {activeTab === 'profile'   && <Profile user={user} onSave={handleSaveProfile} />}
-        {activeTab === 'myPlan'    && <MyPlan user={user} planItems={planItems} onTapCard={openSheet} onMove={handleMove} sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint} />}
+        {activeTab === 'myPlan'    && (
+          <MyPlan user={user} planItems={planItems} onTapCard={openSheet} onMove={handleMove}
+            sprint={sprint} onStartSprint={startSprint} onEndSprint={endSprint}
+            openActionId={openActionId} onDone={handleMarkDone} onRemove={handleRemove}
+            onClosePanel={closeSheet} />
+        )}
         {activeTab === 'allActions' && !allActionsView && (
           <AllActionsHub onSelect={setAllActionsView} />
         )}
@@ -102,25 +121,12 @@ export default function App() {
             planItems={planItems}
             onTapCard={openSheet}
             typeFilter={allActionsView}
-            onBack={() => setAllActionsView(null)} />
-        )}
-        {activeTab === 'reminders' && (
-          <Reminders planItems={planItems}
-            onUpdatePlan={(id) => { openSheet(id); setActiveTab('myPlan'); }} />
+            onBack={() => setAllActionsView(null)}
+            openActionId={openActionId}
+            onAdd={handleAddToYear} onMove={handleMove} onDone={handleMarkDone} onRemove={handleRemove}
+            onClosePanel={closeSheet} sprintActive={!!sprint} />
         )}
       </main>
-      <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
-      {sheet && (
-        <BottomSheet
-          action={sheetAction}
-          planItem={sheetPlanItem}
-          onAdd={(year)  => handleAddToYear(sheet.actionId, year)}
-          onMove={(year) => handleMove(sheet.actionId, year)}
-          onDone={()     => handleMarkDone(sheet.actionId)}
-          onRemove={()   => handleRemove(sheet.actionId)}
-          onClose={closeSheet}
-          sprintActive={!!sprint} />
-      )}
     </div>
   );
 }

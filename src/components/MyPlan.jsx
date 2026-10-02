@@ -1,10 +1,13 @@
 import { useState, useRef } from 'react';
-import { getAction, THEMES } from '../data/actions.js';
+import { getAction } from '../data/actions.js';
 import { LIFE_STAGES, PLAN_TYPES, PLAN_YEAR_BUCKETS } from '../data/templates.js';
 import ActionCardPlan from './ActionCardPlan.jsx';
 import { SprintCards } from './Sprint.jsx';
 
-export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onStartSprint, onEndSprint }) {
+export default function MyPlan({
+  user, planItems, onTapCard, onMove, sprint, onStartSprint, onEndSprint,
+  openActionId, onDone, onRemove, onClosePanel,
+}) {
   const done    = planItems.filter(p => p.year === 'done');
   const ongoing = planItems.filter(p => p.year === 'ongoing');
 
@@ -101,14 +104,9 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
         <div className="print-date">{today}</div>
       </div>
       <div className="your-plan-toolbar">
-        <div>
-          <div className="your-plan-title">Your plan</div>
-          <div className="your-plan-subtitle">{stageName}{planType ? ` · ${planType}` : ''}</div>
-        </div>
+        <h1 className="your-plan-title">Your plan</h1>
         <div className="toolbar-btns">
-          <button className="toolbar-btn toolbar-btn--primary" onClick={handleDownload}>
-            <span>↓</span> Download
-          </button>
+          <button className="btn-primary" onClick={handleDownload}>Download</button>
         </div>
       </div>
       <p className="download-hint">Download opens your browser's print dialog — choose "Save as PDF" to download.</p>
@@ -119,7 +117,9 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
       </p>
       {/* Sprint section — shown at top when active */}
       {sprint
-        ? <SprintCards planItems={planItems} onTapCard={onTapCard} sprint={sprint} onEnd={onEndSprint} />
+        ? <SprintCards planItems={planItems} onTapCard={onTapCard} sprint={sprint} onEnd={onEndSprint}
+            openActionId={openActionId} onMove={onMove} onDone={onDone} onRemove={onRemove}
+            onClosePanel={onClosePanel} sprintActive={!!sprint} />
         : <button className="sprint-cta" onClick={onStartSprint}>
             <span className="sprint-cta-icon">⚡</span>
             <div className="sprint-cta-body">
@@ -136,7 +136,12 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
             <span className="bucket-count">{done.length}</span>
           </div>
           <div className="card-grid">
-            {done.map(item => <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard} />)}
+            {done.map(item => (
+              <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard}
+                panelOpen={openActionId === item.actionId}
+                onMove={onMove} onDone={onDone} onRemove={onRemove}
+                onClosePanel={onClosePanel} sprintActive={!!sprint} />
+            ))}
           </div>
         </section>
       )}
@@ -158,12 +163,18 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
                 {specific.map(item => (
                   <ActionCardPlan key={item.actionId} planItem={item} onTap={onTapCard}
                     dragging={draggingId === item.actionId}
-                    onPressStart={handlePressStart} onPressEnd={handlePressEnd} />
+                    onPressStart={handlePressStart} onPressEnd={handlePressEnd}
+                    panelOpen={openActionId === item.actionId}
+                    onMove={onMove} onDone={onDone} onRemove={onRemove}
+                    onClosePanel={onClosePanel} sprintActive={!!sprint} />
                 ))}
                 {ongoing.map(item => (
                   <ActionCardPlan key={`${bucket.value}-${item.actionId}`} planItem={item} onTap={onTapCard}
                     dragging={draggingId === item.actionId}
-                    onPressStart={handlePressStart} onPressEnd={handlePressEnd} />
+                    onPressStart={handlePressStart} onPressEnd={handlePressEnd}
+                    panelOpen={openActionId === item.actionId}
+                    onMove={onMove} onDone={onDone} onRemove={onRemove}
+                    onClosePanel={onClosePanel} sprintActive={!!sprint} />
                 ))}
               </div>
             </div>
@@ -177,12 +188,11 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
       {draggingId && (() => {
         const ghostAction = getAction(draggingId);
         if (!ghostAction) return null;
-        const ghostTheme = THEMES[ghostAction.theme];
         return (
           <div ref={ghostRef} className="drag-ghost">
-            <div className="action-card drag-ghost-card" style={{ background: ghostTheme.bg, borderColor: ghostTheme.border }}>
-              <span className="card-theme-label" style={{ color: ghostTheme.text }}>{ghostAction.theme}</span>
-              <span className="card-title" style={{ color: ghostTheme.text }}>{ghostAction.title}</span>
+            <div className="action-card drag-ghost-card">
+              <span className="card-theme-label">{ghostAction.theme}</span>
+              <span className="card-title">{ghostAction.title}</span>
             </div>
           </div>
         );

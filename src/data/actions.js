@@ -1,10 +1,10 @@
 export const THEMES = {
-  transport: { label: 'Transport', bg: '#E6F1FB', text: '#185FA5', border: '#B5D4F4' },
-  energy:    { label: 'Energy',    bg: '#FAEEDA', text: '#854F0B', border: '#FAC775' },
-  stuff:     { label: 'Stuff',     bg: '#FAECE7', text: '#993C1D', border: '#F5C4B3' },
-  nature:    { label: 'Nature',    bg: '#E1F5EE', text: '#0F6E56', border: '#9FE1CB' },
-  food:      { label: 'Food',      bg: '#EAF3DE', text: '#3B6D11', border: '#C0DD97' },
-  money:     { label: 'Money',     bg: '#EEEDFE', text: '#534AB7', border: '#CECBF6' },
+  transport: { label: 'Transport', text: '#1F6FB2' },
+  energy:    { label: 'Energy',    text: '#9A5B00' },
+  stuff:     { label: 'Stuff',     text: '#B5502E' },
+  nature:    { label: 'Nature',    text: '#0F7B5F' },
+  food:      { label: 'Food',      text: '#4F7A1F' },
+  money:     { label: 'Money',     text: '#5B4FC4' },
 };
 
 export const ACTIONS = [

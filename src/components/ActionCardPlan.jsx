@@ -1,6 +1,11 @@
+import { Fragment } from 'react';
 import { THEMES, getAction } from '../data/actions.js';
+import InlineActionPanel from './InlineActionPanel.jsx';
 
-export default function ActionCardPlan({ planItem, onTap, dragging, onPressStart, onPressEnd }) {
+export default function ActionCardPlan({
+  planItem, onTap, dragging, onPressStart, onPressEnd,
+  panelOpen, onMove, onDone, onRemove, onClosePanel, sprintActive,
+}) {
   const action    = getAction(planItem.actionId);
   if (!action) return null;
   const isDone    = planItem.year === 'done';
@@ -22,17 +27,13 @@ export default function ActionCardPlan({ planItem, onTap, dragging, onPressStart
     onPressEnd && onPressEnd();
   }
 
-  if (isDone) {
-    return (
-      <div className="action-card action-card--done" onClick={() => onTap(planItem.actionId)}>
-        <span className="card-theme-label">done</span>
-        <span className="card-title card-title--done">{action.title}</span>
-      </div>
-    );
-  }
-  return (
+  const card = isDone ? (
+    <div className="action-card action-card--done" onClick={() => onTap(planItem.actionId)}>
+      <span className="card-theme-label">done</span>
+      <span className="card-title card-title--done">{action.title}</span>
+    </div>
+  ) : (
     <div className={`action-card${dragging ? ' action-card--dragging' : ''}`}
-      style={{ background: theme.bg, borderColor: theme.border }}
       onClick={() => onTap(planItem.actionId)}
       onMouseDown={handleMouseDown}
       onMouseUp={handlePressEnd}
@@ -40,10 +41,25 @@ export default function ActionCardPlan({ planItem, onTap, dragging, onPressStart
       onTouchStart={handleTouchStart}
       onTouchEnd={handlePressEnd}>
       <span className="card-theme-label" style={{ color: theme.text }}>{action.theme}</span>
-      <span className="card-title" style={{ color: theme.text }}>{action.title}</span>
-      {isOngoing && (
-        <span className="card-ongoing-badge" style={{ color: theme.text, borderColor: theme.border }}>↺ Ongoing</span>
-      )}
+      <span className="card-title">{action.title}</span>
+      {isOngoing && <span className="card-ongoing-badge">↺ Ongoing</span>}
     </div>
+  );
+
+  if (!panelOpen) return card;
+
+  return (
+    <Fragment>
+      {card}
+      <InlineActionPanel
+        action={action}
+        planItem={planItem}
+        onMove={(year) => onMove(planItem.actionId, year)}
+        onDone={() => onDone(planItem.actionId)}
+        onRemove={() => onRemove(planItem.actionId)}
+        onClose={onClosePanel}
+        sprintActive={sprintActive}
+      />
+    </Fragment>
   );
 }
