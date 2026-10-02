@@ -10,6 +10,7 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
 
   const stageName = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
   const planType  = PLAN_TYPES.find(t => t.value === user.planType)?.label ?? '';
+  const today     = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
   // ── Drag to move between year buckets ──────────────────────────────────
   const [draggingId, setDraggingId] = useState(null);
@@ -86,59 +87,27 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
     clearHoldTimer();
   }
 
-  function buildShareText() {
-    let out = `My Don't Panic Action Plan\n`;
-    out += `${user.email} · ${user.suburb} ${user.postcode}\n`;
-    out += `${stageName}${planType ? ' · ' + planType : ''}\n\n`;
-    const sprintItems = planItems.filter(p => p.year === 'sprint');
-    if (sprintItems.length) {
-      out += `⚡ ONE MONTH SPRINT\n`;
-      sprintItems.forEach(item => { const a = getAction(item.actionId); if (a) out += `• ${a.title}\n`; });
-      out += '\n';
-    }
-    for (const b of [...PLAN_YEAR_BUCKETS, { value: 'ongoing', label: 'Ongoing' }]) {
-      const items = planItems.filter(p => p.year === b.value);
-      if (!items.length) continue;
-      out += `${b.label.toUpperCase()}\n`;
-      items.forEach(item => {
-        const a = getAction(item.actionId);
-        if (a) out += `• ${a.title}\n`;
-      });
-      out += '\n';
-    }
-    if (done.length) {
-      out += `DONE ✓\n`;
-      done.forEach(item => {
-        const a = getAction(item.actionId);
-        if (a) out += `• ${a.title}\n`;
-      });
-      out += '\n';
-    }
-    out += `Generated with Don't Panic`;
-    return out;
-  }
-
-  async function handleShare() {
-    const text = buildShareText();
-    if (navigator.share) {
-      try { await navigator.share({ title: "My Don't Panic Action Plan", text }); }
-      catch (_) {}
-    } else if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
-      alert('Plan copied to clipboard!');
-    }
+  function handleDownload() {
+    window.print();
   }
 
   return (
     <div className="screen">
+      <div className="print-only print-header">
+        <div>
+          <div className="print-logo">🌿 Don't Panic</div>
+          <div className="print-user">{stageName}{planType ? ` · ${planType}` : ''}</div>
+        </div>
+        <div className="print-date">{today}</div>
+      </div>
       <div className="your-plan-toolbar">
         <div>
           <div className="your-plan-title">Your plan</div>
-          <div className="your-plan-subtitle">{stageName} · {user.suburb} {user.postcode}</div>
+          <div className="your-plan-subtitle">{stageName}{planType ? ` · ${planType}` : ''}</div>
         </div>
         <div className="toolbar-btns">
-          <button className="toolbar-btn" onClick={handleShare}>
-            <span>↑</span> Share
+          <button className="toolbar-btn toolbar-btn--primary" onClick={handleDownload}>
+            <span>↓</span> Download
           </button>
         </div>
       </div>
@@ -198,6 +167,7 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
           <p className="empty-state">Your plan is empty. Head to All Actions to add some.</p>
         )}
       </section>
+      <p className="your-plan-footer print-only">Generated with Don't Panic</p>
       {draggingId && (() => {
         const ghostAction = getAction(draggingId);
         if (!ghostAction) return null;

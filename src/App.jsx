@@ -10,7 +10,7 @@ import Profile        from './components/Profile.jsx';
 import Navigation     from './components/Navigation.jsx';
 import { getAction } from './data/actions.js';
 import { buildInitialPlan, SPRINT_PRELOAD_IDS } from './data/templates.js';
-import { loadUser, loadPlan, saveUser, savePlan, loadSprint, saveSprint, recordCommunityAction } from './storage.js';
+import { loadUser, loadPlan, saveUser, savePlan, loadSprint, saveSprint } from './storage.js';
 
 export default function App() {
   const [user,           setUser]           = useState(() => loadUser());
@@ -47,9 +47,8 @@ export default function App() {
 
   const handleMarkDone = useCallback((actionId) => {
     updatePlan(prev => prev.map(p => p.actionId === actionId ? { ...p, year: 'done' } : p));
-    if (user?.postcode) recordCommunityAction(actionId, user.postcode);
     setSheet(null);
-  }, [user]);
+  }, []);
 
   const handleRemove = useCallback((actionId) => {
     updatePlan(prev => prev.filter(p => p.actionId !== actionId));

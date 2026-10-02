@@ -1,7 +1,8 @@
-import { LIFE_STAGES } from '../data/templates.js';
+import { LIFE_STAGES, PLAN_TYPES } from '../data/templates.js';
 
 export default function Header({ user, planItems }) {
   const stageName = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
+  const planType  = PLAN_TYPES.find(t => t.value === user.planType)?.label ?? '';
   const done      = planItems.filter(p => p.year === 'done').length;
   const remaining = planItems.filter(p => p.year !== 'done').length;
   return (
@@ -14,8 +15,8 @@ export default function Header({ user, planItems }) {
       </div>
       <div className="header-user">
         <div className="header-user-info">
-          <span className="header-display-name">{user.email}</span>
-          <span className="header-meta">{stageName} · {user.suburb} {user.postcode}</span>
+          <span className="header-display-name">{stageName}</span>
+          <span className="header-meta">{planType}</span>
         </div>
         <div className="header-pills">
           {done > 0 && <span className="pill pill-done">{done} done</span>}

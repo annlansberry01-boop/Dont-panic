@@ -2,52 +2,49 @@ import { useState } from 'react';
 import { LIFE_STAGES, PLAN_TYPES } from '../data/templates.js';
 
 export default function Onboarding({ onComplete }) {
-  const [email, setEmail]         = useState('');
-  const [suburb, setSuburb]       = useState('');
-  const [postcode, setPostcode]   = useState('');
   const [lifeStage, setLifeStage] = useState('');
   const [planType, setPlanType]   = useState('standard');
   const [error, setError]         = useState('');
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!email.trim() || !suburb.trim() || !postcode.trim() || !lifeStage) {
-      setError('Please fill in all fields.'); return;
+    if (!lifeStage) {
+      setError('Please choose your life stage.'); return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Please enter a valid email address.'); return;
-    }
-    onComplete({ email: email.trim(), suburb: suburb.trim(), postcode: postcode.trim(), lifeStage, planType });
+    onComplete({ lifeStage, planType });
   }
 
   return (
     <div className="onboarding">
       <div className="onboarding-inner">
-        <div className="onboarding-logo">🌿</div>
-        <h1 className="onboarding-title">Don't Panic</h1>
-        <p className="onboarding-sub">
-          Your personal plan to care for people, planet and local place —
-          at your own pace, budget and life stage.
-        </p>
+        <div className="hero">
+          <div className="hero-copy">
+            <div className="hero-logo">🌿</div>
+            <h1 className="hero-title">Don't Panic.<br />You've got this.</h1>
+            <p className="hero-sub">
+              Live the good life for people, planet and place — at your pace, your budget, and your stage of life.
+            </p>
+            <p className="hero-intro">
+              Feeling overwhelmed about the state of the planet? You're not alone, and you don't need to fix
+              everything at once. Tell us your stage of life and how ambitious you want to be, and we'll build
+              you a personalised plan across transport, energy, stuff, nature, food and money.
+            </p>
+          </div>
+          <div className="hero-media">
+            <img className="hero-book-cover" src="/book-cover.webp" alt="Don't Panic! — Live the good life for planet, people and place, by Ian McBurney" />
+          </div>
+        </div>
+
+        <div className="how-it-works">
+          <h2 className="how-it-works-title">How it works</h2>
+          <ol className="how-it-works-steps">
+            <li><span className="step-num">1</span> Tell us your stage of life</li>
+            <li><span className="step-num">2</span> Choose how ambitious you want to be</li>
+            <li><span className="step-num">3</span> Get your plan — yours to customise and download</li>
+          </ol>
+        </div>
+
         <form className="onboarding-form" onSubmit={handleSubmit} noValidate>
-          <div className="field">
-            <label htmlFor="ob-email">Email</label>
-            <input id="ob-email" type="email" value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com" autoComplete="email" inputMode="email" />
-          </div>
-          <div className="field">
-            <label htmlFor="ob-suburb">Suburb</label>
-            <input id="ob-suburb" type="text" value={suburb}
-              onChange={e => setSuburb(e.target.value)}
-              placeholder="e.g. Fitzroy" autoComplete="address-level2" />
-          </div>
-          <div className="field">
-            <label htmlFor="ob-postcode">Postcode</label>
-            <input id="ob-postcode" type="text" value={postcode}
-              onChange={e => setPostcode(e.target.value)}
-              placeholder="e.g. 3065" autoComplete="postal-code" inputMode="numeric" maxLength={10} />
-          </div>
           <div className="field">
             <label htmlFor="ob-stage">Life stage</label>
             <div className="select-wrap">
@@ -58,7 +55,7 @@ export default function Onboarding({ onComplete }) {
             </div>
           </div>
           <div className="field">
-            <label htmlFor="ob-type">Plan type</label>
+            <label htmlFor="ob-type">How ambitious do you want to be?</label>
             <div className="select-wrap">
               <select id="ob-type" value={planType} onChange={e => setPlanType(e.target.value)}>
                 {PLAN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -69,7 +66,7 @@ export default function Onboarding({ onComplete }) {
           <button type="submit" className="btn-primary btn-full">Build my plan</button>
         </form>
         <p className="onboarding-note">
-          We save your details on this device so you're recognised next time. No password needed.
+          Nothing you choose here is sent anywhere. Once you've created your plan, you can download it.
         </p>
       </div>
     </div>
