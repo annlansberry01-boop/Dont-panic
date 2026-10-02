@@ -125,6 +125,8 @@ body {
   position: relative;
   transition: opacity 0.1s, transform 0.1s;
   -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none; -moz-user-select: none;
+  -webkit-touch-callout: none;
 }
 .action-card:active { opacity: 0.85; transform: scale(0.97); }
 .action-card--library { min-height: 80px; }
