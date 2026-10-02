@@ -387,6 +387,7 @@ body {
 .your-plan-title  { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.4px; }
 .your-plan-subtitle { font-size: 13px; color: var(--text-tertiary); margin-top: 3px; }
 .your-plan-blurb { font-size: 14px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px; }
+.download-hint { font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px; }
 .toolbar-btns { display: flex; gap: 8px; flex-shrink: 0; padding-top: 2px; }
 .toolbar-btn {
   display: flex; align-items: center; gap: 5px;
@@ -552,7 +553,7 @@ body {
   body { background: white !important; font-family: 'Inter', sans-serif; }
   .app { box-shadow: none !important; max-width: none !important; height: auto !important; }
   .main-content { overflow: visible !important; padding-bottom: 0 !important; }
-  .bottom-nav, .app-header, .toolbar-btns, .sheet-backdrop, .sheet, .your-plan-blurb { display: none !important; }
+  .bottom-nav, .app-header, .toolbar-btns, .sheet-backdrop, .sheet, .your-plan-blurb, .download-hint { display: none !important; }
 
   .print-only { display: block !important; }
   .print-header {

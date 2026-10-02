@@ -111,6 +111,7 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
           </button>
         </div>
       </div>
+      <p className="download-hint">Download opens your browser's print dialog — choose "Save as PDF" to download.</p>
       <p className="your-plan-blurb">
         This plan is yours to shape. Tap any action to tick it off, change its year, or remove it —
         or press and hold a card to drag it straight to a different year. Head to All Actions whenever
