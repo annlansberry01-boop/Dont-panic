@@ -93,9 +93,16 @@ export const TEMPLATES = {
 export const PLAN_TYPE_OVERRIDES = {
   blank: () => [],
 
-  quick_wins: () => ACTIONS
-    .filter(a => a.cost === 1 && a.impact >= 2)
-    .map(a => ({ actionId: a.id, year: 'this_year', addedAt: new Date().toISOString() })),
+  // The book's own message: "choose an action (or two) and do them this
+  // year" - pick the cheap, high-impact actions from this life stage's own
+  // curated plan, not the whole 190-action library regardless of relevance.
+  quick_wins: (lifeStage) => {
+    const template   = TEMPLATES[lifeStage] || {};
+    const templateIds = new Set(Object.values(template).flat());
+    return ACTIONS
+      .filter(a => templateIds.has(a.id) && a.cost === 1 && a.impact >= 2)
+      .map(a => ({ actionId: a.id, year: 'this_year', addedAt: new Date().toISOString() }));
+  },
 
   behavioural: () => {
     const ids = [
