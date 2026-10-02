@@ -95,7 +95,7 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
     <div className="screen">
       <div className="print-only print-header">
         <div>
-          <div className="print-logo">🌿 Don't Panic</div>
+          <div className="print-logo">Don't Panic</div>
           <div className="print-user">{stageName}{planType ? ` · ${planType}` : ''}</div>
         </div>
         <div className="print-date">{today}</div>
@@ -111,6 +111,11 @@ export default function MyPlan({ user, planItems, onTapCard, onMove, sprint, onS
           </button>
         </div>
       </div>
+      <p className="your-plan-blurb">
+        This plan is yours to shape. Tap any action to tick it off, change its year, or remove it —
+        or press and hold a card to drag it straight to a different year. Head to All Actions whenever
+        you want to add more.
+      </p>
       {/* Sprint section — shown at top when active */}
       {sprint
         ? <SprintCards planItems={planItems} onTapCard={onTapCard} sprint={sprint} onEnd={onEndSprint} />

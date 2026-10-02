@@ -19,7 +19,6 @@ export default function Onboarding({ onComplete }) {
       <div className="onboarding-inner">
         <div className="hero">
           <div className="hero-copy">
-            <div className="hero-logo">🌿</div>
             <h1 className="hero-title">Don't Panic.<br />You've got this.</h1>
             <p className="hero-sub">
               Live the good life for people, planet and place — at your pace, your budget, and your stage of life.

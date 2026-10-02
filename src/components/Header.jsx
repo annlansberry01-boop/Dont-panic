@@ -9,7 +9,6 @@ export default function Header({ user, planItems }) {
     <header className="app-header">
       <div className="header-top">
         <div className="header-brand">
-          <span className="header-logo">🌿</span>
           <span className="header-name">Don't Panic</span>
         </div>
       </div>
