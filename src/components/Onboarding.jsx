@@ -18,20 +18,13 @@ export default function Onboarding({ onComplete }) {
     <div className="onboarding">
       <div className="onboarding-inner">
         <div className="hero">
-          <div className="hero-copy">
-            <h1 className="hero-title">Don't Panic.<br />You've got this.</h1>
-            <p className="hero-sub">
-              Live the good life for people, planet and place — at your pace, your budget, and your stage of life.
-            </p>
-            <p className="hero-intro">
-              Feeling overwhelmed about the state of the planet? You're not alone, and you don't need to fix
-              everything at once. Tell us your stage of life and how ambitious you want to be, and we'll build
-              you a personalised plan across transport, energy, stuff, nature, food and money.
-            </p>
-          </div>
-          <div className="hero-media">
-            <img className="hero-book-cover" src="/book-cover.webp" alt="Don't Panic! — Live the good life for planet, people and place, by Ian McBurney" />
-          </div>
+          <h1 className="hero-title">Don't Panic.<br />You've got this.</h1>
+          <p className="hero-sub">Let's build your plan together.</p>
+          <p className="hero-intro">
+            Feeling overwhelmed about the state of the planet? You're not alone, and you don't need to fix
+            everything at once. Choose how ambitious you want to be, and we'll build you a personalised plan
+            across transport, energy, stuff, nature, food and money.
+          </p>
         </div>
 
         <div className="how-it-works">
