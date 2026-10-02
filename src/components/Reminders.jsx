@@ -1,69 +1,34 @@
 import { getAction } from '../data/actions.js';
 
-const OFFSETS_MONTHS = [1, 3, 6];
-
 const REMINDER_COPY = {
-  1: (title) => `Hey — a month ago you added "${title}" to your plan for this year. How's it going? No pressure, just checking in. Every small step counts.`,
-  3: (title) => `Three months since you planned to ${title.toLowerCase()}. If you've started — nice work! If not, there's still plenty of time. Want to tweak your timeline?`,
-  6: (title) => `Halfway through the year! You had a goal to ${title.toLowerCase()}. Still on track? You've got this — and if life got in the way, that's completely fine too.`,
+  1: (t) => `Hey — a month ago you added "${t}" to your plan for this year. How's it going? No pressure, just checking in.`,
+  3: (t) => `Three months since you planned to ${t.toLowerCase()}. If you've started — nice work. If not, there's still plenty of time.`,
+  6: (t) => `Halfway through the year! You had a goal to ${t.toLowerCase()}. Still on track? You've got this — and if life got in the way, that's completely fine too.`,
 };
 
-function addMonths(date, months) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
-}
+function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }
+function fmtDate(d) { return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }); }
 
-function formatDate(date) {
-  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-function generateReminders(planItems, now) {
+export default function Reminders({ planItems, onUpdatePlan }) {
+  const now = new Date();
   const reminders = [];
-  const thisYearItems = planItems.filter(p => p.year === 'this_year' && p.addedAt);
-
-  for (const item of thisYearItems) {
+  for (const item of planItems.filter(p => p.year === 'this_year' && p.addedAt)) {
     const action = getAction(item.actionId);
     if (!action) continue;
     const added = new Date(item.addedAt);
-
-    for (const months of OFFSETS_MONTHS) {
+    for (const months of [1, 3, 6]) {
       const triggerDate = addMonths(added, months);
       reminders.push({
-        id:          `${item.actionId}-${months}m`,
-        actionId:    item.actionId,
-        actionTitle: action.title,
-        triggerDate,
-        months,
-        sent:        triggerDate <= now,
-        copy:        REMINDER_COPY[months](action.title),
+        id: `${item.actionId}-${months}m`, actionId: item.actionId,
+        actionTitle: action.title, triggerDate, months,
+        sent: triggerDate <= now,
+        copy: REMINDER_COPY[months](action.title),
       });
     }
   }
-
-  return reminders.sort((a, b) => a.triggerDate - b.triggerDate);
-}
-
-function ReminderCard({ reminder, onUpdatePlan }) {
-  return (
-    <div className={`reminder-card${reminder.sent ? ' reminder-card--sent' : ''}`}>
-      <div className="reminder-meta">
-        <span className="reminder-tag">{reminder.months} month{reminder.months > 1 ? 's' : ''}</span>
-        <span className="reminder-date">{formatDate(reminder.triggerDate)}</span>
-      </div>
-      <p className="reminder-copy">{reminder.copy}</p>
-      <button className="reminder-link" onClick={() => onUpdatePlan(reminder.actionId)}>
-        Update my plan
-      </button>
-    </div>
-  );
-}
-
-export default function Reminders({ planItems, onUpdatePlan }) {
-  const now       = new Date();
-  const reminders = generateReminders(planItems, now);
-  const upcoming  = reminders.filter(r => !r.sent);
-  const sent      = reminders.filter(r => r.sent).reverse();
+  reminders.sort((a, b) => a.triggerDate - b.triggerDate);
+  const upcoming = reminders.filter(r => !r.sent);
+  const sent     = reminders.filter(r => r.sent).reverse();
 
   if (reminders.length === 0) {
     return (
@@ -71,31 +36,35 @@ export default function Reminders({ planItems, onUpdatePlan }) {
         <div className="empty-state-center">
           <p className="empty-icon">📬</p>
           <p className="empty-title">No reminders yet</p>
-          <p className="empty-body">
-            Add actions to <strong>This year</strong> in your plan and we'll send friendly nudges at 1, 3 and 6 months.
-          </p>
+          <p className="empty-body">Add actions to <strong>This year</strong> in your plan and we'll schedule friendly nudges at 1, 3 and 6 months.</p>
         </div>
       </div>
     );
   }
+
+  const RCard = ({ r }) => (
+    <div className={`reminder-card${r.sent ? ' reminder-card--sent' : ''}`}>
+      <div className="reminder-meta">
+        <span className="reminder-tag">{r.months} month{r.months > 1 ? 's' : ''}</span>
+        <span className="reminder-date">{fmtDate(r.triggerDate)}</span>
+      </div>
+      <p className="reminder-copy">{r.copy}</p>
+      <button className="reminder-link" onClick={() => onUpdatePlan(r.actionId)}>Update my plan</button>
+    </div>
+  );
 
   return (
     <div className="screen">
       {upcoming.length > 0 && (
         <section className="reminders-section">
           <h2 className="section-title">Coming up</h2>
-          {upcoming.map(r => (
-            <ReminderCard key={r.id} reminder={r} onUpdatePlan={onUpdatePlan} />
-          ))}
+          {upcoming.map(r => <RCard key={r.id} r={r} />)}
         </section>
       )}
-
       {sent.length > 0 && (
         <section className="reminders-section">
           <h2 className="section-title">Sent</h2>
-          {sent.map(r => (
-            <ReminderCard key={r.id} reminder={r} onUpdatePlan={onUpdatePlan} />
-          ))}
+          {sent.map(r => <RCard key={r.id} r={r} />)}
         </section>
       )}
     </div>
