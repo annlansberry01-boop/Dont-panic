@@ -9,13 +9,16 @@ export default function Profile({ user, onSave }) {
   const [confirming, setConfirming] = useState(false);
 
   const stageName = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
-  const planChanged = lifeStage !== user.lifeStage || planType !== (user.planType || 'standard');
+  // Compare against the settings the plan was last built from, not just the
+  // saved profile — older profiles changed settings without rebuilding.
+  const builtFor    = user.planBuiltFor || {};
+  const planChanged = lifeStage !== builtFor.lifeStage || planType !== builtFor.planType;
 
   function handleSave() {
     if (!lifeStage) return;
     if (planChanged && !confirming) { setConfirming(true); return; }
     setConfirming(false);
-    onSave({ ...user, planType, lifeStage });
+    onSave({ ...user, planType, lifeStage }, planChanged);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }

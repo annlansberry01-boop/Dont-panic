@@ -41,6 +41,7 @@ export default function App() {
 
   function handleOnboardingComplete(userData) {
     const plan = buildInitialPlan(userData.lifeStage, userData.planType);
+    userData = { ...userData, planBuiltFor: { lifeStage: userData.lifeStage, planType: userData.planType } };
     saveUser(userData); savePlan(plan);
     setUser(userData); setPlanItems(plan);
   }
@@ -89,11 +90,11 @@ export default function App() {
     updatePlan(prev => prev.map(p => p.year === 'sprint' ? { ...p, year: 'this_year' } : p));
   }
 
-  function handleSaveProfile(updatedUser) {
-    const planChanged = updatedUser.lifeStage !== user.lifeStage || updatedUser.planType !== (user.planType || 'standard');
+  function handleSaveProfile(updatedUser, rebuild) {
+    if (rebuild) updatedUser = { ...updatedUser, planBuiltFor: { lifeStage: updatedUser.lifeStage, planType: updatedUser.planType } };
     saveUser(updatedUser);
     setUser(updatedUser);
-    if (!planChanged) return;
+    if (!rebuild) return;
     // Rebuild the plan for the new stage/type, keeping anything already ticked
     // off or in a running sprint.
     updatePlan(prev => {
