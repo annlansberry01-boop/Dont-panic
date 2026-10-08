@@ -6,10 +6,15 @@ export default function Profile({ user, onSave }) {
   const [lifeStage, setLifeStage] = useState(user.lifeStage || '');
   const [saved,     setSaved]     = useState(false);
 
+  const [confirming, setConfirming] = useState(false);
+
   const stageName = LIFE_STAGES.find(s => s.value === user.lifeStage)?.label ?? '';
+  const planChanged = lifeStage !== user.lifeStage || planType !== (user.planType || 'standard');
 
   function handleSave() {
     if (!lifeStage) return;
+    if (planChanged && !confirming) { setConfirming(true); return; }
+    setConfirming(false);
     onSave({ ...user, planType, lifeStage });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -25,7 +30,7 @@ export default function Profile({ user, onSave }) {
         <div className="field">
           <label htmlFor="pr-plan">Plan type</label>
           <div className="select-wrap">
-            <select id="pr-plan" value={planType} onChange={e => setPlanType(e.target.value)}>
+            <select id="pr-plan" value={planType} onChange={e => { setPlanType(e.target.value); setConfirming(false); }}>
               {PLAN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
@@ -33,14 +38,24 @@ export default function Profile({ user, onSave }) {
         <div className="field">
           <label htmlFor="pr-stage">Stage of life</label>
           <div className="select-wrap">
-            <select id="pr-stage" value={lifeStage} onChange={e => setLifeStage(e.target.value)}>
+            <select id="pr-stage" value={lifeStage} onChange={e => { setLifeStage(e.target.value); setConfirming(false); }}>
               {LIFE_STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
         </div>
+        {confirming && (
+          <p className="profile-confirm-note">
+            This will rebuild your plan for the new settings. Actions you've ticked off are kept; other changes you've made to your plan will be replaced.
+          </p>
+        )}
         {saved
           ? <div className="profile-saved-msg">✓ Changes saved</div>
-          : <button className="btn-primary btn-full" onClick={handleSave}>Save changes</button>
+          : confirming
+            ? <>
+                <button className="btn-primary btn-full" onClick={handleSave}>Rebuild my plan</button>
+                <button className="btn-secondary btn-full" onClick={() => setConfirming(false)}>Cancel</button>
+              </>
+            : <button className="btn-primary btn-full" onClick={handleSave}>Save changes</button>
         }
       </div>
     </div>

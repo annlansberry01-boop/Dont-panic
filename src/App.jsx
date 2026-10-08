@@ -90,8 +90,19 @@ export default function App() {
   }
 
   function handleSaveProfile(updatedUser) {
+    const planChanged = updatedUser.lifeStage !== user.lifeStage || updatedUser.planType !== (user.planType || 'standard');
     saveUser(updatedUser);
     setUser(updatedUser);
+    if (!planChanged) return;
+    // Rebuild the plan for the new stage/type, keeping anything already ticked
+    // off or in a running sprint.
+    updatePlan(prev => {
+      const kept   = prev.filter(p => p.year === 'done' || p.year === 'sprint');
+      const keptIds = new Set(kept.map(p => p.actionId));
+      const fresh  = buildInitialPlan(updatedUser.lifeStage, updatedUser.planType)
+        .filter(p => !keptIds.has(p.actionId));
+      return [...kept, ...fresh];
+    });
   }
 
   function openSheet(actionId)  { setSheet({ actionId }); }
